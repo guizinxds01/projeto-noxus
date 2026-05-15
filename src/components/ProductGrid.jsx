@@ -5,8 +5,7 @@ import { useConfig } from '../ConfigContext';
 
 import ProductCard from './ProductCard';
 
-const API = '';
-const PER_PAGE = 5;
+const PER_PAGE = 10;
 
 // Componente de Contagem Regressiva para Ofertas
 const CountdownTimer = () => {
@@ -38,17 +37,9 @@ const CountdownTimer = () => {
 };
 
 const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
-  const { categories } = useConfig();
-  const [products, setProducts] = useState([]);
+  const { categories, products } = useConfig();
   const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(0);
-
-  useEffect(() => {
-    fetch(`${API}/api/products`)
-      .then(r => r.json())
-      .then(setProducts)
-      .catch(() => {});
-  }, []);
 
   // Reset para primeira página quando filtro muda
   useEffect(() => { setPage(0); }, [activeCategory, search]);

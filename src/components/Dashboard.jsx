@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { TrendingUp, Users, ShoppingBag, DollarSign } from 'lucide-react';
 
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -18,28 +18,35 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
-    // Fetch basic stats
-    Promise.all([
-      fetch(`${API}/api/products`).then(r => r.json()),
-      fetch(`${API}/api/categories`).then(r => r.json()),
-      fetch(`${API}/api/banners`).then(r => r.json())
-    ]).then(([p, c, b]) => {
-      const totalClicks = p.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
+    const loadStats = async () => {
+      const [
+        { data: p },
+        { data: c },
+        { data: b }
+      ] = await Promise.all([
+        supabase.from('products').select('*'),
+        supabase.from('categories').select('*'),
+        supabase.from('banners').select('*')
+      ]);
+
+      const totalClicks = (p || []).reduce((acc, curr) => acc + (curr.clicks || 0), 0);
       setStats({
-        products: p.length,
-        categories: c.length,
-        banners: b.length,
+        products: (p || []).length,
+        categories: (c || []).length,
+        banners: (b || []).length,
         clicks: totalClicks
       });
 
       // Simular dados de gráfico baseados nos produtos atuais
-      const data = p.slice(0, 7).map(item => ({
+      const data = (p || []).slice(0, 7).map(item => ({
         name: item.name.substring(0, 10),
         vendas: Math.floor(Math.random() * 50) + 10,
         visitas: (item.clicks || 0) + Math.floor(Math.random() * 100)
       }));
       setChartData(data);
-    });
+    };
+
+    loadStats();
   }, []);
 
   const cards = [

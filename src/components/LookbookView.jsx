@@ -5,15 +5,8 @@ import { useConfig } from '../ConfigContext';
 
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
-
 const LookbookView = ({ setOpenProduct }) => {
-  const { lookbook } = useConfig();
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch(`${API}/api/products`).then(r => r.json()).then(setProducts).catch(() => {});
-  }, []);
+  const { lookbook, products } = useConfig();
 
   if (!lookbook || lookbook.length === 0) {
     return (
@@ -38,7 +31,7 @@ const LookbookView = ({ setOpenProduct }) => {
         {/* Masonry-style Grid */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {lookbook.map((look, idx) => {
-            const product = look.productId ? products.find(p => p._id === look.productId) : null;
+            const product = look.productId ? products.find(p => p.id === look.productId) : null;
 
             return (
               <motion.div

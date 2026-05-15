@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
 
 const ProductPage = ({ product, onBack }) => {
   const { config } = useConfig();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const Banner = () => {
   const [banners, setBanners] = useState([]);
@@ -9,15 +9,14 @@ const Banner = () => {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API}/api/banners`)
-      .then(r => r.json())
-      .then(list => {
-        const active = list
-          .filter(b => b.status)
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-        setBanners(active);
-      })
-      .catch(() => {});
+    const loadBanners = async () => {
+      const { data } = await supabase.from('banners').select('*').order('ord');
+      const active = (data || [])
+        .filter(b => b.status)
+        .map(b => ({ ...b, _id: b.id }));
+      setBanners(active);
+    };
+    loadBanners();
   }, []);
 
   // Auto-play
@@ -58,7 +57,7 @@ const Banner = () => {
           >
             {ban.image ? (
               <img
-                src={`${API}${ban.image}`}
+                src={ban.image}
                 alt={ban.title || `Banner ${i + 1}`}
                 className="w-full h-full object-cover"
               />

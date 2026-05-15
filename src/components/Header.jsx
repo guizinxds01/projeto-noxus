@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
 
 const Header = ({ setView, onAdmin }) => {
   const { config, categories, products } = useConfig();
@@ -121,7 +120,7 @@ const Header = ({ setView, onAdmin }) => {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
           {config.logo ? (
             <motion.img
-              src={`${API}${config.logo}`}
+              src={config.logo}
               alt={config.name}
               onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               animate={{ 

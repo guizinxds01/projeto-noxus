@@ -4,7 +4,6 @@ import { useConfig } from '../ConfigContext';
 import { X, Trash2, Plus, Minus, ShoppingBag, MessageCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API = '';
 
 const CartDrawer = () => {
   const { items, remove, updateQty, clear, total, count, open, setOpen } = useCart();
@@ -94,7 +93,7 @@ const CartDrawer = () => {
                     {/* Foto */}
                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/5 flex-shrink-0 border border-white/5">
                       {item.product.images?.[0] ? (
-                        <img src={`${API}${item.product.images[0]}`} alt={item.product.name} className="w-full h-full object-cover" />
+                        <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-white/5" />
                       )}

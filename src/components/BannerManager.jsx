@@ -117,7 +117,7 @@ const BannerManager = () => {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-4">
                     <div className="w-24 h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex-shrink-0">
-                      {b.image ? <img src={`${API}${b.image}`} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-white/5" />}
+                      {b.image ? <img src={b.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-white/5" />}
                     </div>
                     <span className="font-bold text-sm text-white">{b.title || <span className="text-gray-600 italic">Sem título</span>}</span>
                   </div>
@@ -203,7 +203,7 @@ const BannerManager = () => {
               </label>
               {current.image && (
                 <div className="mt-4 aspect-[16/7] rounded-2xl overflow-hidden border border-white/10">
-                  <img src={`${API}${current.image}`} className="w-full h-full object-cover" />
+                  <img src={current.image} className="w-full h-full object-cover" />
                 </div>
               )}
             </div>

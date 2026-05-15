@@ -1,12 +1,11 @@
 import React from 'react';
 
-const API = '';
 
 const MediaRenderer = ({ url, className, ...props }) => {
   if (!url) return null;
 
   const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i);
-  const fullUrl = url.startsWith('http') ? url : `${API}${url}`;
+  const fullUrl = url;
 
   if (isVideo) {
     return (

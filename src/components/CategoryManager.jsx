@@ -95,7 +95,7 @@ const CategoryManager = () => {
                 <td className="px-6 py-4">
                   <div className="w-14 h-14 rounded-full border-2 border-white/10 overflow-hidden bg-[#111] flex items-center justify-center flex-shrink-0">
                     {c.image ? (
-                      <img src={`${API}${c.image}`} alt={c.name} className="w-full h-full object-cover" />
+                      <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-xl font-black italic text-white/30">{c.name?.[0]?.toUpperCase()}</span>
                     )}
@@ -173,7 +173,7 @@ const CategoryManager = () => {
             {/* Preview circular */}
             <div className="w-24 h-24 rounded-full border-2 border-white/10 overflow-hidden bg-[#111] flex items-center justify-center flex-shrink-0">
               {current.image ? (
-                <img src={`${API}${current.image}`} alt={current.name} className="w-full h-full object-cover" />
+                <img src={current.image} alt={current.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl font-black italic text-white/20">
                   {current.name?.[0]?.toUpperCase() || '?'}
