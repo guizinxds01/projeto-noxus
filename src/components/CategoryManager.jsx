@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, X, Upload, ImageOff } from 'lucide-react';
 
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const CategoryManager = () => {
   const [categories, setCategories] = useState([]);
@@ -12,8 +12,8 @@ const CategoryManager = () => {
 
   const load = async () => {
     try {
-      const res = await fetch(`${API}/api/categories`);
-      setCategories(await res.json());
+      const { data } = await supabase.from('categories').select('*').order('name');
+      setCategories((data || []).map(c => ({ ...c, _id: c.id })));
     } catch (e) { console.error(e); }
   };
 
@@ -28,12 +28,13 @@ const CategoryManager = () => {
     if (!file) return;
     setUploading(true);
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      setCurrent(prev => ({ ...prev, image: data.url }));
-    } catch (e) { alert('Erro ao enviar imagem'); }
+      const fileName = `cat-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('products').upload(fileName, file);
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      setCurrent(prev => ({ ...prev, image: publicUrl }));
+    } catch (e) { alert('Erro ao enviar imagem: ' + e.message); }
     setUploading(false);
   };
 
@@ -41,14 +42,18 @@ const CategoryManager = () => {
     if (!current.name.trim()) { alert('Digite o nome da categoria.'); return; }
     setSaving(true);
     try {
-      const isNew = !current._id;
-      const url = isNew ? `${API}/api/categories` : `${API}/api/categories/${current._id}`;
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: current.name, image: current.image, parent_id: current.parent_id })
-      });
-      if (!res.ok) throw new Error('Falha ao salvar');
+      const saveObj = {
+        name: current.name,
+        image: current.image,
+        parent_id: current.parent_id || null
+      };
+
+      if (current._id) saveObj.id = current._id;
+      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+      const { error } = await supabase.from('categories').upsert([saveObj]);
+      if (error) throw error;
+      
       await load();
       cancel();
     } catch (e) { alert('Erro: ' + e.message); }
@@ -57,7 +62,7 @@ const CategoryManager = () => {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir esta categoria?')) return;
-    await fetch(`${API}/api/categories/${id}`, { method: 'DELETE' });
+    await supabase.from('categories').delete().eq('id', id);
     await load();
   };
 

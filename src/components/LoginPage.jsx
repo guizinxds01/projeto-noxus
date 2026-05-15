@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, User, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const LoginPage = ({ onLogin, onBack }) => {
   const [username, setUsername] = useState('');
@@ -14,22 +15,21 @@ const LoginPage = ({ onLogin, onBack }) => {
     setError('');
 
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      const { data, error: sbError } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single();
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        localStorage.setItem('noxus_token', data.token);
-        onLogin();
+      if (sbError || !data) {
+        setError('Usuário ou senha incorretos');
       } else {
-        setError(data.error || 'Acesso negado');
+        localStorage.setItem('noxus_token', 'session-' + Date.now());
+        onLogin();
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
+      setError('Erro ao conectar com o banco de dados');
     } finally {
       setLoading(false);
     }

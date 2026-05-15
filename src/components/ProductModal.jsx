@@ -2,16 +2,25 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingCart, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useConfig } from '../ConfigContext';
+import { supabase } from '../lib/supabase';
 
 const ProductModal = ({ product, onClose }) => {
   const { config } = useConfig();
 
   const handleWhatsApp = async () => {
-    await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId: product._id })
-    });
+    // Increment clicks
+    const { data: p } = await supabase.from('products').select('clicks').eq('id', product._id).single();
+    await supabase.from('products').update({ clicks: (p?.clicks || 0) + 1 }).eq('id', product._id);
+
+    // Create order record
+    await supabase.from('orders').insert([{
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      productName: product.name,
+      productId: product._id,
+      date: new Date().toISOString(),
+      status: 'novo'
+    }]);
+
     const message = encodeURIComponent(`Olá, tenho interesse neste produto: ${product.name}`);
     window.open(`https://wa.me/${config.whatsappNumber}?text=${message}`, '_blank');
   };

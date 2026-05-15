@@ -1,15 +1,23 @@
 import React from 'react';
 import { useConfig } from '../ConfigContext';
+import { supabase } from '../lib/supabase';
 
 const Settings = () => {
   const { config, updateConfig } = useConfig();
   const handleFileUpload = async (e, field) => {
     const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    updateConfig({ ...config, [field]: data.url });
+    if (!file) return;
+
+    try {
+      const fileName = `logo-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('products').upload(fileName, file);
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      updateConfig({ ...config, [field]: publicUrl });
+    } catch (e) {
+      alert('Erro no upload: ' + e.message);
+    }
   };
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>

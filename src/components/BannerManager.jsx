@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Eye, EyeOff } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const emptyBanner = { title: '', subtitle: '', image: '', buttonText: '', buttonLink: '#catalog', status: true, order: 0 };
 
@@ -17,9 +17,8 @@ const BannerManager = () => {
 
   const load = async () => {
     try {
-      const res = await fetch(`${API}/api/banners`);
-      const data = await res.json();
-      setBanners(Array.isArray(data) ? data : []);
+      const { data } = await supabase.from('banners').select('*').order('ord');
+      setBanners((data || []).map(b => ({ ...b, _id: b.id, order: b.ord, status: !!b.status })));
     } catch (e) { console.error(e); }
   };
 
@@ -32,31 +31,23 @@ const BannerManager = () => {
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    reader.onload = () => {
-      setTempImage(reader.result);
-      setShowCropper(true);
-    };
+    reader.onload = () => { setTempImage(reader.result); setShowCropper(true); };
     reader.readAsDataURL(file);
-    // Reset input
     e.target.value = '';
   };
 
   const handleCropComplete = async (blob) => {
     setShowCropper(false);
     setUploading(true);
-    
-    const form = new FormData();
-    form.append('file', blob, 'banner.jpg');
-    
     try {
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      setCurrent(prev => ({ ...prev, image: data.url }));
-    } catch (e) { 
-      alert('Erro ao enviar imagem'); 
-    }
+      const fileName = `banner-${Math.random().toString(36).slice(2)}.jpg`;
+      const { data, error } = await supabase.storage.from('products').upload(fileName, blob);
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      setCurrent(prev => ({ ...prev, image: publicUrl }));
+    } catch (e) { alert('Erro ao enviar imagem: ' + e.message); }
     setUploading(false);
     setTempImage(null);
   };
@@ -64,24 +55,23 @@ const BannerManager = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const isNew = !current._id;
-      const url = isNew ? `${API}/api/banners` : `${API}/api/banners/${current._id}`;
-      const method = isNew ? 'POST' : 'PUT';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: current.title,
-          subtitle: current.subtitle,
-          image: current.image,
-          buttonText: current.buttonText,
-          buttonLink: current.buttonLink || '#catalog',
-          status: current.status,
-          order: Number(current.order) || 0
-        })
-      });
-      if (!res.ok) throw new Error('Falha ao salvar');
-      await load(); // Recarrega lista atualizada
+      const saveObj = {
+        title: current.title,
+        subtitle: current.subtitle,
+        image: current.image,
+        buttonText: current.buttonText,
+        buttonLink: current.buttonLink || '#catalog',
+        status: !!current.status,
+        ord: Number(current.order) || 0
+      };
+
+      if (current._id) saveObj.id = current._id;
+      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+      const { error } = await supabase.from('banners').upsert([saveObj]);
+      if (error) throw error;
+      
+      await load();
       cancel();
     } catch (e) { alert('Erro ao salvar banner: ' + e.message); }
     setSaving(false);
@@ -89,16 +79,12 @@ const BannerManager = () => {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir este banner?')) return;
-    await fetch(`${API}/api/banners/${id}`, { method: 'DELETE' });
+    await supabase.from('banners').delete().eq('id', id);
     await load();
   };
 
   const toggleStatus = async (b) => {
-    await fetch(`${API}/api/banners/${b._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: !b.status })
-    });
+    await supabase.from('banners').update({ status: !b.status }).eq('id', b._id);
     await load();
   };
 

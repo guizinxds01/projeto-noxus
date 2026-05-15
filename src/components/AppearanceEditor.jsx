@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useConfig } from '../ConfigContext';
 import { Upload, Palette, Image as ImageIcon, Sun, Moon } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const AppearanceEditor = () => {
   const { config, updateConfig } = useConfig();
@@ -8,13 +9,20 @@ const AppearanceEditor = () => {
 
   const handleUpload = async (e, field) => {
     const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    const updated = { ...localConfig, [field]: data.url };
-    setLocalConfig(updated);
-    updateConfig(updated);
+    if (!file) return;
+
+    try {
+      const fileName = `logo-app-${Math.random().toString(36).slice(2)}.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('products').upload(fileName, file);
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      const updated = { ...localConfig, [field]: publicUrl };
+      setLocalConfig(updated);
+      updateConfig(updated);
+    } catch (e) {
+      alert('Erro no upload: ' + e.message);
+    }
   };
 
   const handleUpdate = (field, value) => {

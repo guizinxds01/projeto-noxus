@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Search, Star, Eye, Copy, Video } from 'lucide-react';
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const emptyProduct = { name: '', price: '', description: '', category: '', images: [], sizes: [], status: 'ativo', isFeatured: false, onOffer: false, viewsCount: 0 };
 
@@ -14,17 +14,35 @@ const ProductManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const parseProduct = (p) => {
+    if (!p) return null;
+    return {
+      _id: p.id,
+      name: p.name,
+      price: p.price,
+      description: p.description,
+      category: p.category,
+      images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
+      sizes: Array.isArray(p.sizes) ? p.sizes : JSON.parse(p.sizes || '[]'),
+      status: p.status,
+      clicks: p.clicks || 0,
+      isFeatured: !!p.is_featured,
+      onOffer: !!p.on_offer,
+      viewsCount: p.views_count || 0
+    };
+  };
+
   const loadProducts = async () => {
     try {
-      const res = await fetch(`${API}/api/products`);
-      setProducts(await res.json());
+      const { data } = await supabase.from('products').select('*').order('id', { ascending: false });
+      setProducts((data || []).map(parseProduct));
     } catch (e) { console.error(e); }
   };
 
   const loadCategories = async () => {
     try {
-      const res = await fetch(`${API}/api/categories`);
-      setCategories(await res.json());
+      const { data } = await supabase.from('categories').select('*').order('name');
+      setCategories((data || []).map(c => ({ _id: c.id, ...c })));
     } catch (e) { console.error(e); }
   };
 
@@ -37,13 +55,8 @@ const ProductManager = () => {
   // Auto-Categorização Inteligente
   useEffect(() => {
     if (!isEditing || !current.name || current.category) return;
-    
     const nameLower = current.name.toLowerCase();
-    
-    // Tenta encontrar a categoria mais específica primeiro (subcategorias)
-    // Ordenamos por tamanho do nome (descendente) para pegar "Camisa Retro" antes de "Camisa"
     const sortedCats = [...categories].sort((a, b) => b.name.length - a.name.length);
-    
     for (const cat of sortedCats) {
       if (nameLower.includes(cat.name.toLowerCase())) {
         setCurrent(prev => ({ ...prev, category: cat.name }));
@@ -55,11 +68,24 @@ const ProductManager = () => {
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files);
     for (const file of files) {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      setCurrent(prev => ({ ...prev, images: [...prev.images, data.url] }));
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('products')
+        .upload(filePath, file);
+
+      if (error) {
+        alert('Erro no upload: ' + error.message);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      setCurrent(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
     }
   };
 
@@ -67,25 +93,25 @@ const ProductManager = () => {
     if (!current.name || !current.price) { alert('Preencha pelo menos o nome e preço.'); return; }
     setSaving(true);
     try {
-      const isNew = !current._id;
-      const url = isNew ? `${API}/api/products` : `${API}/api/products/${current._id}`;
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: current.name,
-          price: current.price,
-          description: current.description,
-          category: current.category,
-          images: current.images,
-          sizes: current.sizes,
-          status: current.status,
-          isFeatured: current.isFeatured,
-          onOffer: current.onOffer,
-          viewsCount: current.viewsCount
-        })
-      });
-      if (!res.ok) throw new Error('Falha ao salvar');
+      const saveObj = {
+        name: current.name,
+        price: String(current.price),
+        description: current.description,
+        category: current.category,
+        images: current.images,
+        sizes: current.sizes,
+        status: current.status,
+        is_featured: !!current.isFeatured,
+        on_offer: !!current.onOffer,
+        views_count: Number(current.viewsCount)
+      };
+
+      if (current._id) saveObj.id = current._id;
+      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+      const { error } = await supabase.from('products').upsert([saveObj]);
+      if (error) throw error;
+      
       await loadProducts();
       cancel();
     } catch (e) { alert('Erro ao salvar: ' + e.message); }
@@ -94,7 +120,7 @@ const ProductManager = () => {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir este produto?')) return;
-    await fetch(`${API}/api/products/${id}`, { method: 'DELETE' });
+    await supabase.from('products').delete().eq('id', id);
     await loadProducts();
   };
 

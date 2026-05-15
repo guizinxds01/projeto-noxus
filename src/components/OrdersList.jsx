@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const OrdersList = () => {
   const [orders, setOrders] = useState([]);
   const fetchOrders = async () => {
     try {
-      const res = await fetch('/api/orders');
-      const data = await res.json();
-      setOrders(data);
+      const { data } = await supabase.from('orders').select('*').order('date', { ascending: false });
+      setOrders(data || []);
     } catch (e) { console.error(e); }
   };
   useEffect(() => { fetchOrders(); }, []);
   const handleStatusChange = async (id, status) => {
-    await fetch(`/api/orders/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
+    await supabase.from('orders').update({ status }).eq('id', id);
     fetchOrders();
   };
   return (

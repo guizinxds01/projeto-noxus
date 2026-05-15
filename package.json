@@ -15,8 +15,10 @@
     "vite": "^8.0.12"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
     "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "^10.5.0",
+    "axios": "^1.16.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.16.0",
     "postcss": "^8.5.14",
