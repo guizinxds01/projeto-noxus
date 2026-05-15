@@ -4,8 +4,11 @@ import { CartProvider } from './CartContext';
 import AdminPanel from './components/AdminPanel';
 import Storefront from './components/Storefront';
 import LoginPage from './components/LoginPage';
+import ConnectionError from './components/ConnectionError';
 
 function App() {
+  const hasEnv = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+
   // Detectar rota inicial
   const getInitialView = () => {
     const path = window.location.pathname;
@@ -34,6 +37,10 @@ function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  if (!hasEnv) {
+    return <ConnectionError />;
+  }
 
   const goAdmin = () => {
     setView('admin');
