@@ -1,0 +1,52 @@
+{
+  "config": {
+    "name": "NOXUS",
+    "logo": "",
+    "primaryColor": "#00ff88",
+    "secondaryColor": "#050505",
+    "theme": "dark",
+    "whatsappNumber": "5511999999999",
+    "whatsappMessage": "Olá, tenho interesse neste produto: "
+  },
+  "categories": [
+    {
+      "_id": "1",
+      "name": "Camisetas",
+      "image": ""
+    },
+    {
+      "_id": "2",
+      "name": "Calças",
+      "image": ""
+    },
+    {
+      "_id": "3",
+      "name": "Tênis",
+      "image": ""
+    }
+  ],
+  "products": [],
+  "banners": [
+    {
+      "_id": "1",
+      "image": "",
+      "title": "COLEÇÃO FUTURE 2026",
+      "subtitle": "O novo conceito de streetwear premium chegou.",
+      "buttonText": "VER CATÁLOGO",
+      "buttonLink": "#catalog",
+      "status": true,
+      "order": 0
+    },
+    {
+      "title": "",
+      "subtitle": "",
+      "image": "/uploads/1778816871886.png",
+      "buttonText": "",
+      "buttonLink": "",
+      "status": true,
+      "order": 0,
+      "_id": "1778816873163"
+    }
+  ],
+  "orders": []
+}

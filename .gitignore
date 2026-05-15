@@ -1,0 +1,14 @@
+node_modules
+.env
+noxus.db
+backup_catalogo.json
+server/test_supabase.js
+server/migrate_sqlite_to_supabase.js
+server/noxus.db
+server/backup_catalogo.json
+.DS_Store
+dist
+build
+.tempmediaStorage
+diagnostico.js
+server/diagnostico.js

@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #050505;
+    --bg-surface: #0c0c0c;
+    --text-main: #ffffff;
+    --text-muted: rgba(255,255,255,0.4);
+    --border-subtle: rgba(255,255,255,0.05);
+    --primary: #00ff88;
+
+    /* Fontes — Montserrat para impacto, Inter para leitura limpa */
+    --font-display: 'Montserrat', sans-serif;
+    --font-body:    'Inter', sans-serif;
+  }
+
+  html {
+    font-family: var(--font-body);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    @apply antialiased;
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    letter-spacing: -0.01em;
+  }
+
+  /* Títulos definidos e menos 'grossos' que o anterior */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+  }
+}
+
+/* ── Utilitários de Tipografia ──────────────────────── */
+.font-display { font-family: var(--font-display) !important; }
+.font-body    { font-family: var(--font-body) !important; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track  { background: var(--bg-main); }
+::-webkit-scrollbar-thumb  { background: #1a1a1a; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* Glassmorphism */
+.glass {
+  background: rgba(12, 12, 12, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Carousel progress bar */
+@keyframes progress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Animações suaves */
+.animate-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
