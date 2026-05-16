@@ -36,6 +36,85 @@ const CountdownTimer = () => {
   );
 };
 
+// Componente de Carrossel Horizontal com Setas
+const HorizontalCarousel = ({ title, products, onOpenProduct, icon: Icon, iconColor }) => {
+  const scrollRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [products]);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const { clientWidth } = scrollRef.current;
+      const scrollAmount = direction === 'left' ? -clientWidth * 0.8 : clientWidth * 0.8;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="space-y-6 relative group/carousel">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-1 ${iconColor || 'bg-primary'} rounded-full`} />
+          <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">{title}</h3>
+        </div>
+        {title === 'Ofertas Imperdíveis' && <CountdownTimer />}
+      </div>
+
+      <div className="relative group">
+        <AnimatePresence>
+          {showLeftArrow && (
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => scroll('left')}
+              className="absolute -left-2 md:-left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center text-white hover:text-primary transition-all bg-gradient-to-r from-[#050505] to-transparent md:bg-none"
+            >
+              <ChevronLeft size={32} strokeWidth={1.5} />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        <div 
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide no-scrollbar snap-x snap-mandatory px-2"
+        >
+          {products.map(p => (
+            <div key={p._id} className="w-[220px] md:w-[280px] flex-shrink-0 snap-start">
+              <ProductCard product={p} onSelect={onOpenProduct} />
+            </div>
+          ))}
+        </div>
+
+        <AnimatePresence>
+          {showRightArrow && (
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => scroll('right')}
+              className="absolute -right-2 md:-right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center text-white hover:text-primary transition-all bg-gradient-to-l from-[#050505] to-transparent md:bg-none"
+            >
+              <ChevronRight size={32} strokeWidth={1.5} />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
 const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
   const { categories, products } = useConfig();
   const [search, setSearch]     = useState('');
@@ -47,6 +126,10 @@ const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
   // Filtros especiais
   const featuredProducts = products.filter(p => p.isFeatured && p.status === 'ativo');
   const offerProducts    = products.filter(p => p.onOffer && p.status === 'ativo');
+  const bestSellers      = [...products]
+    .filter(p => p.status === 'ativo')
+    .sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0))
+    .slice(0, 10);
 
   const filtered = products.filter(p => {
     if (p.status !== 'ativo') return false;
@@ -83,41 +166,34 @@ const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
       {/* ─── PRATELEIRAS ESPECIAIS (Apenas na Home sem busca) ─── */}
       {!activeCategory && !search && (
         <>
+          {/* Peças Mais Vendidas */}
+          {bestSellers.length > 0 && (
+            <HorizontalCarousel 
+              title="Peças Mais Vendidas" 
+              products={bestSellers} 
+              onOpenProduct={onOpenProduct}
+              iconColor="bg-blue-500"
+            />
+          )}
+
           {/* Destaques */}
           {featuredProducts.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-1 bg-yellow-500 rounded-full" />
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Destaques da Semana</h3>
-              </div>
-              <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide no-scrollbar">
-                {featuredProducts.map(p => (
-                  <div key={p._id} className="w-48 md:w-56 flex-shrink-0">
-                    <ProductCard product={p} onSelect={onOpenProduct} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <HorizontalCarousel 
+              title="Destaques da Semana" 
+              products={featuredProducts} 
+              onOpenProduct={onOpenProduct}
+              iconColor="bg-yellow-500"
+            />
           )}
 
           {/* Ofertas */}
           {offerProducts.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-1 bg-red-500 rounded-full" />
-                  <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Ofertas Imperdíveis</h3>
-                </div>
-                <CountdownTimer />
-              </div>
-              <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide no-scrollbar">
-                {offerProducts.map(p => (
-                  <div key={p._id} className="w-48 md:w-56 flex-shrink-0">
-                    <ProductCard product={p} onSelect={onOpenProduct} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <HorizontalCarousel 
+              title="Ofertas Imperdíveis" 
+              products={offerProducts} 
+              onOpenProduct={onOpenProduct}
+              iconColor="bg-red-500"
+            />
           )}
         </>
       )}
@@ -160,22 +236,22 @@ const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
             )}
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative group/main">
             <AnimatePresence>
               {hasMultiple && page > 0 && (
                 <motion.button
-                  initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                   onClick={prev}
-                  className="absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-white shadow-xl hover:border-[#00ff88]/50 hover:text-[#00ff88] transition-all"
+                  className="absolute -left-4 md:-left-12 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center text-white hover:text-primary transition-all bg-black/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl"
                 >
-                  <ChevronLeft size={22} />
+                  <ChevronLeft size={32} />
                 </motion.button>
               )}
             </AnimatePresence>
 
             <AnimatePresence mode="wait">
               <motion.div
-                key={page + activeCategory + search}
+                key={page + (activeCategory || '') + search}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -185,6 +261,18 @@ const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
                   <ProductCard key={product._id} product={product} onSelect={onOpenProduct} />
                 ))}
               </motion.div>
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {hasMultiple && page < totalPages - 1 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={next}
+                  className="absolute -right-4 md:-right-12 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center text-white hover:text-primary transition-all bg-black/60 backdrop-blur-md rounded-full border border-white/10 shadow-2xl"
+                >
+                  <ChevronRight size={32} />
+                </motion.button>
+              )}
             </AnimatePresence>
 
             {totalPages > 1 && (

@@ -1,19 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { User, ArrowRight } from 'lucide-react';
 import { useConfig } from '../ConfigContext';
-
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
-
 const LookbookView = ({ setOpenProduct }) => {
-  const { lookbook } = useConfig();
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch(`${API}/api/products`).then(r => r.json()).then(setProducts).catch(() => {});
-  }, []);
+  const { lookbook, products } = useConfig();
 
   if (!lookbook || lookbook.length === 0) {
     return (
@@ -27,7 +19,6 @@ const LookbookView = ({ setOpenProduct }) => {
   return (
     <div className="bg-[#050505] min-h-screen pt-32 pb-24">
       <div className="container mx-auto px-6">
-        
         <div className="mb-16 text-center max-w-2xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-display uppercase text-white mb-6 tracking-tighter">Modelagem</h2>
           <p className="text-white/50 text-sm md:text-base">
@@ -35,7 +26,6 @@ const LookbookView = ({ setOpenProduct }) => {
           </p>
         </div>
 
-        {/* Masonry-style Grid */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
           {lookbook.map((look, idx) => {
             const product = look.productId ? products.find(p => p._id === look.productId) : null;
@@ -56,14 +46,12 @@ const LookbookView = ({ setOpenProduct }) => {
                 />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-                  
                   {look.influencerName && (
                     <div className="flex items-center gap-2 mb-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                       <User size={16} className="text-[#00ff88]" />
                       <span className="text-white font-bold text-sm">{look.influencerName}</span>
                     </div>
                   )}
-
                   {product && (
                     <button
                       onClick={() => setOpenProduct(product)}
@@ -81,7 +69,6 @@ const LookbookView = ({ setOpenProduct }) => {
             );
           })}
         </div>
-
       </div>
     </div>
   );

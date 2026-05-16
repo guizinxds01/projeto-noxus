@@ -106,8 +106,11 @@ const ProductManager = () => {
         views_count: Number(current.viewsCount)
       };
 
-      if (current._id) saveObj.id = current._id;
-      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      if (current._id) {
+        saveObj.id = current._id;
+      } else {
+        saveObj.id = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+      }
 
       const { error } = await supabase.from('products').upsert([saveObj]);
       if (error) throw error;

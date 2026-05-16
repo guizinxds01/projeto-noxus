@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
-
 const Header = ({ setView, onAdmin }) => {
   const { config, categories, products } = useConfig();
   const { count, setOpen: openCart } = useCart();
@@ -120,10 +118,10 @@ const Header = ({ setView, onAdmin }) => {
         {/* Center: Logo — Absolute Dead Center */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
           {config.logo ? (
-            <motion.img
-              src={`${API}${config.logo}`}
-              alt={config.name}
-              onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              <motion.img
+                src={config.logo}
+                alt={config.name}
+                onClick={() => { setView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               animate={{ 
                 y: [0, -8, 0],
                 scale: [1, 1.08, 1],
@@ -192,17 +190,19 @@ const Header = ({ setView, onAdmin }) => {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/70 z-[60]" onClick={() => setMenuOpen(false)} />
-            <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-              className="fixed top-0 left-0 w-72 h-full bg-[#0a0a0a] z-[70] p-8 flex flex-col">
+            <motion.div 
+              initial={{ x: '-100%' }} 
+              animate={{ x: 0 }} 
+              exit={{ x: '-100%' }}
+              className="fixed top-0 left-0 w-72 h-full bg-[#050505] z-[100] p-8 flex flex-col shadow-2xl border-r border-white/5"
+            >
               <div className="flex justify-between items-center mb-12">
                 <motion.span 
-                  animate={{ scale: [1, 1.05, 1], textShadow: ['0 0 5px #00ff8800', '0 0 15px #00ff8888', '0 0 5px #00ff8800'] }}
-                  transition={{ duration: 2, repeat: Infinity }}
                   className="text-xl font-black italic text-white"
                 >
                   {config.name || 'NOXUS'}
                 </motion.span>
-                <button onClick={() => setMenuOpen(false)} className="text-white/50"><X /></button>
+                <button onClick={() => setMenuOpen(false)} className="p-2 text-white/50 hover:text-white bg-white/5 rounded-lg"><X size={24} /></button>
               </div>
               <nav className="flex flex-col gap-6">
                 <a href="#" onClick={() => { setView('home'); setMenuOpen(false); }} className="text-2xl font-black uppercase italic text-white">Início</a>

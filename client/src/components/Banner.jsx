@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const Banner = () => {
   const [banners, setBanners] = useState([]);
@@ -9,18 +8,13 @@ const Banner = () => {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${API}/api/banners`)
-      .then(r => r.json())
-      .then(list => {
-        const active = list
-          .filter(b => b.status)
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-        setBanners(active);
-      })
-      .catch(() => {});
+    const load = async () => {
+      const { data } = await supabase.from('banners').select('*').eq('status', true).order('ord');
+      setBanners(data || []);
+    };
+    load();
   }, []);
 
-  // Auto-play
   useEffect(() => {
     if (banners.length <= 1) return;
     timerRef.current = setInterval(() => {
@@ -32,7 +26,6 @@ const Banner = () => {
   const goTo = (idx) => {
     clearInterval(timerRef.current);
     setCurrent(idx);
-    // Reinicia o timer após interação manual
     timerRef.current = setInterval(() => {
       setCurrent(c => (c + 1) % banners.length);
     }, 5000);
@@ -43,22 +36,18 @@ const Banner = () => {
 
   if (banners.length === 0) return null;
 
-  const b = banners[current];
-
   return (
     <section className="container mx-auto px-4 md:px-6 mb-10">
       <div className="relative w-full aspect-[16/7] rounded-2xl md:rounded-3xl overflow-hidden bg-[#0c0c0c] border border-white/5 group">
-
-        {/* Slides */}
         {banners.map((ban, i) => (
           <div
-            key={ban._id}
+            key={ban.id}
             className="absolute inset-0 transition-opacity duration-700"
             style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
           >
             {ban.image ? (
               <img
-                src={`${API}${ban.image}`}
+                src={ban.image}
                 alt={ban.title || `Banner ${i + 1}`}
                 className="w-full h-full object-cover"
               />
@@ -68,7 +57,6 @@ const Banner = () => {
               </div>
             )}
 
-            {/* Texto sobre o banner */}
             {(ban.title || ban.subtitle) && (
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex flex-col justify-center px-8 md:px-16">
                 {ban.title && (
@@ -94,7 +82,6 @@ const Banner = () => {
           </div>
         ))}
 
-        {/* Setas de navegação — só aparecem se tiver mais de 1 banner */}
         {banners.length > 1 && (
           <>
             <button
@@ -112,7 +99,6 @@ const Banner = () => {
           </>
         )}
 
-        {/* Dots indicadores */}
         {banners.length > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2">
             {banners.map((_, i) => (
@@ -129,13 +115,15 @@ const Banner = () => {
           </div>
         )}
 
-        {/* Barra de progresso */}
         {banners.length > 1 && (
           <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white/10 z-10">
             <div
               key={current}
-              className="h-full bg-[#00ff88] animate-progress"
-              style={{ animation: 'progress 5s linear' }}
+              className="h-full bg-[#00ff88]"
+              style={{ 
+                width: '100%',
+                animation: 'progress 5s linear'
+              }}
             />
           </div>
         )}

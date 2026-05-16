@@ -12,8 +12,10 @@ import HowToBuy from './HowToBuy';
 import FloatingWhatsApp from './FloatingWhatsApp';
 import ExitIntentPopup from './ExitIntentPopup';
 import { ArrowLeft } from 'lucide-react';
+import { useConfig } from '../ConfigContext';
 
 const Storefront = ({ onAdmin, initialView = 'home' }) => {
+  const { products } = useConfig();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openProduct, setOpenProduct] = useState(null);
   const [activeView, setActiveView] = useState(initialView);
@@ -27,10 +29,8 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
     } else if (v === 'lookbook') {
       setActiveView('lookbook');
     } else {
-      // É uma categoria
       setActiveView('home');
       setSelectedCategory(v);
-      // Scroll suave para o catálogo
       setTimeout(() => {
         const el = document.getElementById('catalog');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -38,26 +38,29 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
     }
   };
 
-  // Componente de Cabeçalho da Página Interna
-  const PageHeader = ({ title }) => (
-    <div className="bg-[#050505] border-b border-white/5 pt-32 pb-10 px-4 md:px-10">
-      <div className="container mx-auto">
-        <button 
-          onClick={() => setActiveView('home')}
-          className="flex items-center gap-2 text-white/40 hover:text-white transition-colors font-black text-[10px] uppercase tracking-widest mb-4"
-        >
-          <ArrowLeft size={14} /> Voltar para o Início
-        </button>
-        <h1 className="text-5xl md:text-7xl font-display uppercase text-white leading-none">{title}</h1>
-      </div>
-    </div>
-  );
+  const handleNextProduct = () => {
+    if (!openProduct || products.length === 0) return;
+    const currentIdx = products.findIndex(p => p._id === openProduct._id);
+    const nextIdx = (currentIdx + 1) % products.length;
+    setOpenProduct(products[nextIdx]);
+  };
 
-  // Renderização Condicional de Vistas
+  const handlePrevProduct = () => {
+    if (!openProduct || products.length === 0) return;
+    const currentIdx = products.findIndex(p => p._id === openProduct._id);
+    const prevIdx = (currentIdx - 1 + products.length) % products.length;
+    setOpenProduct(products[prevIdx]);
+  };
+
   if (openProduct) {
     return (
       <>
-        <ProductPage product={openProduct} onBack={() => setOpenProduct(null)} />
+        <ProductPage 
+          product={openProduct} 
+          onBack={() => setOpenProduct(null)} 
+          onNext={handleNextProduct}
+          onPrev={handlePrevProduct}
+        />
         <CartDrawer />
         <FloatingWhatsApp />
         <ExitIntentPopup />
@@ -104,7 +107,6 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
           onClearCategory={() => setSelectedCategory(null)}
           onOpenProduct={setOpenProduct}
         />
-        {/* Na home mostramos as seções resumidas */}
         <InfoSections />
       </main>
       <Footer />

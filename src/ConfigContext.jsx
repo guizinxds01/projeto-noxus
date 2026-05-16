@@ -4,6 +4,17 @@ import { supabase } from './lib/supabase';
 const Ctx = createContext({});
 export const useConfig = () => useContext(Ctx);
 
+const parseLook = (l) => {
+  if (!l) return null;
+  return {
+    id: l.id,
+    image: l.image,
+    influencerName: l.influencername || l.influencerName || '',
+    productId: l.productid || l.productId || '',
+    ord: l.ord || 0
+  };
+};
+
 const parseProduct = (p) => {
   if (!p) return null;
   return {
@@ -43,7 +54,7 @@ export const ConfigProvider = ({ children }) => {
 
   const reloadLookbook = async () => {
     const { data } = await supabase.from('lookbook').select('*').order('ord');
-    setLookbook(data || []);
+    setLookbook((data || []).map(parseLook));
   };
 
   const reloadConfig = async () => {

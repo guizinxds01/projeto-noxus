@@ -48,8 +48,9 @@ const CategoryManager = () => {
         parent_id: current.parent_id || null
       };
 
-      if (current._id) saveObj.id = current._id;
-      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      if (current._id) {
+        saveObj.id = current._id;
+      }
 
       const { error } = await supabase.from('categories').upsert([saveObj]);
       if (error) throw error;

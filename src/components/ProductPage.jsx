@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MediaRenderer from './MediaRenderer';
 
 
-const ProductPage = ({ product, onBack }) => {
+const ProductPage = ({ product, onBack, onNext, onPrev }) => {
   const { config } = useConfig();
   const { add } = useCart();
   const [selectedSize, setSelectedSize] = useState(null);
@@ -56,15 +56,34 @@ const ProductPage = ({ product, onBack }) => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      {/* Topbar */}
-      <div className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-10 py-4 flex items-center gap-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest">
-          <ArrowLeft size={18} /> Voltar
-        </button>
-        <span className="text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
-        <span className="text-white/40 text-xs uppercase tracking-widest font-bold truncate">{product.category}</span>
-        <span className="text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
-        <span className="text-white text-xs uppercase tracking-widest font-bold truncate">{product.name}</span>
+      <div className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-10 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest">
+            <ArrowLeft size={18} /> Voltar
+          </button>
+          <span className="text-white/20 text-xs uppercase tracking-widest font-bold hidden md:inline">/</span>
+          <span className="text-white/40 text-xs uppercase tracking-widest font-bold truncate max-w-[100px] md:max-w-none hidden md:inline">{product.category}</span>
+          <span className="text-white/20 text-xs uppercase tracking-widest font-bold hidden md:inline">/</span>
+          <span className="text-white text-xs uppercase tracking-widest font-bold truncate max-w-[150px] md:max-w-none">{product.name}</span>
+        </div>
+
+        {/* Navegação entre produtos */}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onPrev}
+            className="p-2 text-white/40 hover:text-primary transition-colors bg-white/5 rounded-lg border border-white/5"
+            title="Produto Anterior"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button 
+            onClick={onNext}
+            className="p-2 text-white/40 hover:text-primary transition-colors bg-white/5 rounded-lg border border-white/5"
+            title="Próximo Produto"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-14">

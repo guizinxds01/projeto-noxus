@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Upload, Camera } from 'lucide-react';
 import { useConfig } from '../ConfigContext';
 import MediaRenderer from './MediaRenderer';
+import { supabase } from '../lib/supabase';
 
 const emptyLook = { image: '', influencerName: '', productId: '', ord: 0 };
 
 const LookbookManager = () => {
-  const { lookbook, reloadLookbook } = useConfig();
+  const { lookbook, reloadLookbook, products: ctxProducts } = useConfig();
   const [looks, setLooks] = useState([]);
   const [products, setProducts] = useState([]);
   const [editingLook, setEditingLook] = useState(null);
@@ -18,28 +19,51 @@ const LookbookManager = () => {
   }, [lookbook]);
 
   useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(setProducts).catch(() => {});
-  }, []);
+    setProducts(ctxProducts || []);
+  }, [ctxProducts]);
 
   const handleSave = async (look) => {
-    const isNew = !look.id;
-    const url = isNew ? '/api/lookbook' : `/api/lookbook/${look.id}`;
-    const method = isNew ? 'POST' : 'PUT';
+    try {
+      const saveObj = {
+        image: look.image,
+        influencername: look.influencerName || '',
+        productid: look.productId || null,
+        ord: Number(look.ord) || 0
+      };
 
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(look)
-    });
-    reloadLookbook();
-    setEditingLook(null);
-    setIsCreating(false);
+      if (look.id) {
+        saveObj.id = look.id;
+      } else {
+        // Gera um ID numérico aleatório para novos registros caso a tabela não seja auto-incremento
+        saveObj.id = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+      }
+
+      console.log('DEBUG: Tentando salvar no Supabase:', saveObj);
+      const { error } = await supabase.from('lookbook').upsert([saveObj]);
+      
+      if (error) {
+        console.error('Erro detalhado do Supabase:', error);
+        throw error;
+      }
+
+      reloadLookbook();
+      setEditingLook(null);
+      setIsCreating(false);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar modelagem: ' + err.message);
+    }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Deseja realmente remover esta foto da modelagem?')) return;
-    await fetch(`/api/lookbook/${id}`, { method: 'DELETE' });
-    reloadLookbook();
+    try {
+      const { error } = await supabase.from('lookbook').delete().eq('id', id);
+      if (error) throw error;
+      reloadLookbook();
+    } catch (err) {
+      alert('Erro ao deletar: ' + err.message);
+    }
   };
 
   const handleUpload = async (e) => {
@@ -47,19 +71,33 @@ const LookbookManager = () => {
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `look-${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('products')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Erro no upload:', error);
+        alert('Erro no upload da imagem: ' + (error.message || 'Erro desconhecido. Verifique as permissões do bucket "products" no Supabase.'));
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
       if (editingLook) {
-        setEditingLook({ ...editingLook, image: data.url });
+        setEditingLook({ ...editingLook, image: publicUrl });
       } else if (isCreating) {
-        setEditingLook({ ...emptyLook, image: data.url });
+        setEditingLook({ ...emptyLook, image: publicUrl });
       }
     } catch (err) {
       console.error(err);
+      alert('Erro no upload: ' + err.message);
     }
     setIsUploading(false);
   };

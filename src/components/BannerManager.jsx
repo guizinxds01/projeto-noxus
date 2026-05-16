@@ -65,8 +65,9 @@ const BannerManager = () => {
         ord: Number(current.order) || 0
       };
 
-      if (current._id) saveObj.id = current._id;
-      else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      if (current._id) {
+        saveObj.id = current._id;
+      }
 
       const { error } = await supabase.from('banners').upsert([saveObj]);
       if (error) throw error;

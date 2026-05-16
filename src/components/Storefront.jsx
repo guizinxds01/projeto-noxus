@@ -53,11 +53,37 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
     </div>
   );
 
+  // Navegação entre produtos
+  const handleNextProduct = () => {
+    if (!openProduct) return;
+    const currentIndex = products.findIndex(p => p._id === openProduct._id);
+    if (currentIndex < products.length - 1) {
+      setOpenProduct(products[currentIndex + 1]);
+    } else {
+      setOpenProduct(products[0]); // Loop para o primeiro
+    }
+  };
+
+  const handlePrevProduct = () => {
+    if (!openProduct) return;
+    const currentIndex = products.findIndex(p => p._id === openProduct._id);
+    if (currentIndex > 0) {
+      setOpenProduct(products[currentIndex - 1]);
+    } else {
+      setOpenProduct(products[products.length - 1]); // Loop para o último
+    }
+  };
+
   // Renderização Condicional de Vistas
   if (openProduct) {
     return (
       <>
-        <ProductPage product={openProduct} onBack={() => setOpenProduct(null)} />
+        <ProductPage 
+          product={openProduct} 
+          onBack={() => setOpenProduct(null)} 
+          onNext={handleNextProduct}
+          onPrev={handlePrevProduct}
+        />
         <CartDrawer />
         <FloatingWhatsApp />
         <ExitIntentPopup />

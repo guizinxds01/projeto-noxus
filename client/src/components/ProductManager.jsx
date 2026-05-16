@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Search, Star, Eye, Copy, Video } from 'lucide-react';
 import MediaRenderer from './MediaRenderer';
-
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const emptyProduct = { name: '', price: '', description: '', category: '', images: [], sizes: [], status: 'ativo', isFeatured: false, onOffer: false, viewsCount: 0 };
 
@@ -14,17 +13,35 @@ const ProductManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const parseProduct = (p) => {
+    if (!p) return null;
+    return {
+      _id: p.id,
+      name: p.name,
+      price: p.price,
+      description: p.description,
+      category: p.category,
+      images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
+      sizes: Array.isArray(p.sizes) ? p.sizes : JSON.parse(p.sizes || '[]'),
+      status: p.status,
+      clicks: p.clicks || 0,
+      isFeatured: !!p.is_featured,
+      onOffer: !!p.on_offer,
+      viewsCount: p.views_count || 0
+    };
+  };
+
   const loadProducts = async () => {
     try {
-      const res = await fetch(`${API}/api/products`);
-      setProducts(await res.json());
+      const { data } = await supabase.from('products').select('*').order('id', { ascending: false });
+      setProducts((data || []).map(parseProduct));
     } catch (e) { console.error(e); }
   };
 
   const loadCategories = async () => {
     try {
-      const res = await fetch(`${API}/api/categories`);
-      setCategories(await res.json());
+      const { data } = await supabase.from('categories').select('*').order('name');
+      setCategories((data || []).map(c => ({ _id: c.id, ...c })));
     } catch (e) { console.error(e); }
   };
 
@@ -34,16 +51,10 @@ const ProductManager = () => {
   const openEdit = (p) => { setCurrent(p); setIsEditing(true); };
   const cancel = () => { setCurrent(emptyProduct); setIsEditing(false); };
 
-  // Auto-Categorização Inteligente
   useEffect(() => {
     if (!isEditing || !current.name || current.category) return;
-    
     const nameLower = current.name.toLowerCase();
-    
-    // Tenta encontrar a categoria mais específica primeiro (subcategorias)
-    // Ordenamos por tamanho do nome (descendente) para pegar "Camisa Retro" antes de "Camisa"
     const sortedCats = [...categories].sort((a, b) => b.name.length - a.name.length);
-    
     for (const cat of sortedCats) {
       if (nameLower.includes(cat.name.toLowerCase())) {
         setCurrent(prev => ({ ...prev, category: cat.name }));
@@ -55,11 +66,12 @@ const ProductManager = () => {
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files);
     for (const file of files) {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      setCurrent(prev => ({ ...prev, images: [...prev.images, data.url] }));
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const { error } = await supabase.storage.from('products').upload(fileName, file);
+      if (error) { alert('Erro no upload: ' + error.message); continue; }
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      setCurrent(prev => ({ ...prev, images: [...prev.images, publicUrl] }));
     }
   };
 
@@ -67,25 +79,28 @@ const ProductManager = () => {
     if (!current.name || !current.price) { alert('Preencha pelo menos o nome e preço.'); return; }
     setSaving(true);
     try {
-      const isNew = !current._id;
-      const url = isNew ? `${API}/api/products` : `${API}/api/products/${current._id}`;
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: current.name,
-          price: current.price,
-          description: current.description,
-          category: current.category,
-          images: current.images,
-          sizes: current.sizes,
-          status: current.status,
-          isFeatured: current.isFeatured,
-          onOffer: current.onOffer,
-          viewsCount: current.viewsCount
-        })
-      });
-      if (!res.ok) throw new Error('Falha ao salvar');
+      const saveObj = {
+        name: current.name,
+        price: String(current.price),
+        description: current.description,
+        category: current.category,
+        images: current.images,
+        sizes: current.sizes,
+        status: current.status,
+        is_featured: !!current.isFeatured,
+        on_offer: !!current.onOffer,
+        views_count: Number(current.viewsCount)
+      };
+
+      if (current._id) {
+        saveObj.id = current._id;
+      } else {
+        saveObj.id = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+      }
+
+      const { error } = await supabase.from('products').upsert([saveObj]);
+      if (error) throw error;
+      
       await loadProducts();
       cancel();
     } catch (e) { alert('Erro ao salvar: ' + e.message); }
@@ -94,13 +109,12 @@ const ProductManager = () => {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir este produto?')) return;
-    await fetch(`${API}/api/products/${id}`, { method: 'DELETE' });
+    await supabase.from('products').delete().eq('id', id);
     await loadProducts();
   };
 
   const filtered = products.filter(p => p.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // ── LIST VIEW ──
   if (!isEditing) return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-10">
@@ -132,7 +146,7 @@ const ProductManager = () => {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={5} className="px-6 py-16 text-center text-gray-600 text-sm">Nenhum produto cadastrado.</td></tr>
+              <tr><td colSpan={6} className="px-6 py-16 text-center text-gray-600 text-sm">Nenhum produto cadastrado.</td></tr>
             )}
             {filtered.map(p => (
               <tr key={p._id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
@@ -175,7 +189,6 @@ const ProductManager = () => {
     </div>
   );
 
-  // ── EDIT / CREATE VIEW ──
   return (
     <div className="bg-[#0a0a0a] rounded-3xl p-10 border border-white/5">
       <div className="flex justify-between items-center mb-10">
@@ -216,11 +229,6 @@ const ProductManager = () => {
               onChange={e => setCurrent(p => ({ ...p, sizes: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
               placeholder="P, M, G ou 38, 39, 40..."
               className="w-full bg-[#111] border border-white/5 p-4 rounded-2xl outline-none font-bold text-white focus:border-[#00ff88]/50" />
-            <div className="flex gap-2 mt-2">
-              <button type="button" onClick={() => setCurrent(p => ({ ...p, sizes: ['P', 'M', 'G', 'GG'] }))} className="px-3 py-1.5 bg-white/5 text-[9px] font-black uppercase rounded-lg hover:bg-white/10 text-gray-400">Roupas</button>
-              <button type="button" onClick={() => setCurrent(p => ({ ...p, sizes: ['38', '39', '40', '41', '42', '43'] }))} className="px-3 py-1.5 bg-white/5 text-[9px] font-black uppercase rounded-lg hover:bg-white/10 text-gray-400">Calçados</button>
-              <button type="button" onClick={() => setCurrent(p => ({ ...p, sizes: [] }))} className="px-3 py-1.5 bg-white/5 text-[9px] font-black uppercase rounded-lg hover:bg-red-500/10 text-red-500/60">Limpar</button>
-            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -232,30 +240,18 @@ const ProductManager = () => {
               </select>
             </div>
             <div className="flex flex-col justify-end gap-3 pb-1">
-              <div 
-                onClick={() => setCurrent(p => ({ ...p, isFeatured: !p.isFeatured }))}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${current.isFeatured ? 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.4)]' : 'bg-white/5'}`}>
+              <div onClick={() => setCurrent(p => ({ ...p, isFeatured: !p.isFeatured }))} className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${current.isFeatured ? 'bg-yellow-500' : 'bg-white/5'}`}>
                   <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${current.isFeatured ? 'left-6' : 'left-1'}`} />
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${current.isFeatured ? 'text-yellow-500' : 'text-gray-500 group-hover:text-white'}`}>Destaque</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Destaque</span>
               </div>
-
-              <div 
-                onClick={() => setCurrent(p => ({ ...p, onOffer: !p.onOffer }))}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${current.onOffer ? 'bg-[#00ff88] shadow-[0_0_10px_rgba(0,255,136,0.4)]' : 'bg-white/5'}`}>
+              <div onClick={() => setCurrent(p => ({ ...p, onOffer: !p.onOffer }))} className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${current.onOffer ? 'bg-[#00ff88]' : 'bg-white/5'}`}>
                   <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${current.onOffer ? 'left-6' : 'left-1'}`} />
                 </div>
-                <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${current.onOffer ? 'text-[#00ff88]' : 'text-gray-500 group-hover:text-white'}`}>Oferta</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Oferta</span>
               </div>
-            </div>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block italic">🔥 Visualizações (Fake)</label>
-              <input type="number" value={current.viewsCount} onChange={e => setCurrent(p => ({ ...p, viewsCount: e.target.value }))}
-                className="w-full bg-[#111] border border-white/5 p-4 rounded-2xl outline-none font-bold text-white focus:border-[#00ff88]/50" />
             </div>
           </div>
         </div>
@@ -265,7 +261,7 @@ const ProductManager = () => {
             <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Fotos do Produto</label>
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl p-8 hover:border-[#00ff88]/50 cursor-pointer transition-all bg-[#111]">
               <Upload className="text-gray-500 mb-2" />
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest text-center px-4">Enviar Mídia (Imagens ou Vídeos)</span>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Enviar Fotos</span>
               <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} />
             </label>
             {current.images.length > 0 && (
@@ -280,8 +276,7 @@ const ProductManager = () => {
               </div>
             )}
           </div>
-          <button onClick={handleSave} disabled={saving}
-            className="w-full bg-[#00ff88] text-black py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving} className="w-full bg-[#00ff88] text-black py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-50">
             {saving ? 'Salvando...' : 'Salvar Produto'}
           </button>
         </div>

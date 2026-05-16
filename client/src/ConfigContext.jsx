@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 
 const Ctx = createContext({});
 export const useConfig = () => useContext(Ctx);
-
-const API = '';
 
 export const ConfigProvider = ({ children }) => {
   const [config, setConfig] = useState({
@@ -14,14 +13,59 @@ export const ConfigProvider = ({ children }) => {
   const [lookbook, setLookbook] = useState([]);
   const [products, setProducts] = useState([]);
 
-  const reloadProducts = () => {
-    fetch(`${API}/api/products`).then(r => r.json()).then(setProducts).catch(() => {});
+  const parseLook = (l) => {
+  if (!l) return null;
+  return {
+    id: l.id,
+    image: l.image,
+    influencerName: l.influencername || l.influencerName || '',
+    productId: l.productid || l.productId || '',
+    ord: l.ord || 0
+  };
+};
+
+const parseProduct = (p) => {
+    if (!p) return null;
+    return {
+      _id: p.id,
+      name: p.name,
+      price: p.price,
+      description: p.description,
+      category: p.category,
+      images: Array.isArray(p.images) ? p.images : JSON.parse(p.images || '[]'),
+      sizes: Array.isArray(p.sizes) ? p.sizes : JSON.parse(p.sizes || '[]'),
+      status: p.status,
+      clicks: p.clicks || 0,
+      isFeatured: !!p.is_featured,
+      onOffer: !!p.on_offer,
+      viewsCount: p.views_count || 0
+    };
+  };
+
+  const reloadProducts = async () => {
+    const { data } = await supabase.from('products').select('*').order('id', { ascending: false });
+    setProducts((data || []).map(parseProduct));
+  };
+
+  const reloadCategories = async () => {
+    const { data } = await supabase.from('categories').select('*').order('name');
+    setCategories((data || []).map(c => ({ _id: c.id, ...c })));
+  };
+
+  const reloadLookbook = async () => {
+    const { data } = await supabase.from('lookbook').select('*').order('ord');
+    setLookbook((data || []).map(parseLook));
+  };
+
+  const loadConfig = async () => {
+    const { data } = await supabase.from('config').select('*').single();
+    if (data) setConfig(data);
   };
 
   useEffect(() => {
-    fetch(`${API}/api/config`).then(r => r.json()).then(setConfig).catch(() => {});
-    fetch(`${API}/api/categories`).then(r => r.json()).then(setCategories).catch(() => {});
-    fetch(`${API}/api/lookbook`).then(r => r.json()).then(setLookbook).catch(() => {});
+    loadConfig();
+    reloadCategories();
+    reloadLookbook();
     reloadProducts();
   }, []);
 
@@ -30,11 +74,8 @@ export const ConfigProvider = ({ children }) => {
       document.title = `${config.name} — Loja Premium`;
     }
     
-    // Aplicar Tema e Cores Dinâmicas
     const root = document.documentElement;
     const isDark = config.theme !== 'light';
-    
-    // Injetar variáveis CSS no root
     root.style.setProperty('--primary', config.primaryColor || '#00ff88');
     
     if (isDark) {
@@ -60,25 +101,13 @@ export const ConfigProvider = ({ children }) => {
         link.rel = 'icon';
         document.head.appendChild(link);
       }
-      link.href = `${API}${config.logo}`;
+      link.href = config.logo;
     }
   }, [config.name, config.logo, config.theme, config.primaryColor]);
 
   const updateConfig = async (data) => {
-    const res = await fetch(`${API}/api/config`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    setConfig(await res.json());
-  };
-
-  const reloadCategories = () => {
-    fetch(`${API}/api/categories`).then(r => r.json()).then(setCategories).catch(() => {});
-  };
-
-  const reloadLookbook = () => {
-    fetch(`${API}/api/lookbook`).then(r => r.json()).then(setLookbook).catch(() => {});
+    const { error } = await supabase.from('config').upsert([data]);
+    if (!error) setConfig(data);
   };
 
   return (

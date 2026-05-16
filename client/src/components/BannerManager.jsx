@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Upload, X, Eye, EyeOff } from 'lucide-react';
 import ImageCropper from './ImageCropper';
-
-const API = '';
+import { supabase } from '../lib/supabase';
 
 const emptyBanner = { title: '', subtitle: '', image: '', buttonText: '', buttonLink: '#catalog', status: true, order: 0 };
 
@@ -17,9 +16,8 @@ const BannerManager = () => {
 
   const load = async () => {
     try {
-      const res = await fetch(`${API}/api/banners`);
-      const data = await res.json();
-      setBanners(Array.isArray(data) ? data : []);
+      const { data } = await supabase.from('banners').select('*').order('ord');
+      setBanners((data || []).map(b => ({ ...b, _id: b.id, order: b.ord, status: !!b.status })));
     } catch (e) { console.error(e); }
   };
 
@@ -32,31 +30,22 @@ const BannerManager = () => {
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    reader.onload = () => {
-      setTempImage(reader.result);
-      setShowCropper(true);
-    };
+    reader.onload = () => { setTempImage(reader.result); setShowCropper(true); };
     reader.readAsDataURL(file);
-    // Reset input
     e.target.value = '';
   };
 
   const handleCropComplete = async (blob) => {
     setShowCropper(false);
     setUploading(true);
-    
-    const form = new FormData();
-    form.append('file', blob, 'banner.jpg');
-    
     try {
-      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
-      const data = await res.json();
-      setCurrent(prev => ({ ...prev, image: data.url }));
-    } catch (e) { 
-      alert('Erro ao enviar imagem'); 
-    }
+      const fileName = `banner-${Math.random().toString(36).slice(2)}.jpg`;
+      const { error } = await supabase.storage.from('products').upload(fileName, blob);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
+      setCurrent(prev => ({ ...prev, image: publicUrl }));
+    } catch (e) { alert('Erro ao enviar imagem: ' + e.message); }
     setUploading(false);
     setTempImage(null);
   };
@@ -64,24 +53,22 @@ const BannerManager = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const isNew = !current._id;
-      const url = isNew ? `${API}/api/banners` : `${API}/api/banners/${current._id}`;
-      const method = isNew ? 'POST' : 'PUT';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: current.title,
-          subtitle: current.subtitle,
-          image: current.image,
-          buttonText: current.buttonText,
-          buttonLink: current.buttonLink || '#catalog',
-          status: current.status,
-          order: Number(current.order) || 0
-        })
-      });
-      if (!res.ok) throw new Error('Falha ao salvar');
-      await load(); // Recarrega lista atualizada
+      const saveObj = {
+        title: current.title,
+        subtitle: current.subtitle,
+        image: current.image,
+        buttonText: current.buttonText,
+        buttonLink: current.buttonLink || '#catalog',
+        status: !!current.status,
+        ord: Number(current.order) || 0
+      };
+
+      if (current._id) saveObj.id = current._id;
+
+      const { error } = await supabase.from('banners').upsert([saveObj]);
+      if (error) throw error;
+      
+      await load();
       cancel();
     } catch (e) { alert('Erro ao salvar banner: ' + e.message); }
     setSaving(false);
@@ -89,20 +76,15 @@ const BannerManager = () => {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir este banner?')) return;
-    await fetch(`${API}/api/banners/${id}`, { method: 'DELETE' });
+    await supabase.from('banners').delete().eq('id', id);
     await load();
   };
 
   const toggleStatus = async (b) => {
-    await fetch(`${API}/api/banners/${b._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: !b.status })
-    });
+    await supabase.from('banners').update({ status: !b.status }).eq('id', b._id);
     await load();
   };
 
-  // ── LIST VIEW ──
   if (!isEditing) return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-10">
@@ -131,7 +113,7 @@ const BannerManager = () => {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-4">
                     <div className="w-24 h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex-shrink-0">
-                      {b.image ? <img src={`${API}${b.image}`} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-white/5" />}
+                      {b.image ? <img src={b.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-white/5" />}
                     </div>
                     <span className="font-bold text-sm text-white">{b.title || <span className="text-gray-600 italic">Sem título</span>}</span>
                   </div>
@@ -163,7 +145,6 @@ const BannerManager = () => {
     </div>
   );
 
-  // ── EDIT / CREATE VIEW ──
   return (
     <>
       <div className="bg-[#0a0a0a] rounded-3xl p-10 border border-white/5 max-w-4xl">
@@ -198,11 +179,6 @@ const BannerManager = () => {
                   className="w-full bg-[#111] border border-white/5 p-4 rounded-2xl outline-none font-bold text-white focus:border-[#00ff88]/50" />
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-[#111] rounded-2xl">
-              <input type="checkbox" id="status" checked={!!current.status} onChange={e => setCurrent(p => ({ ...p, status: e.target.checked }))}
-                className="w-4 h-4 accent-[#00ff88]" />
-              <label htmlFor="status" className="text-sm font-bold text-white cursor-pointer">Banner ativo (aparece na loja)</label>
-            </div>
           </div>
 
           <div className="space-y-5">
@@ -217,13 +193,12 @@ const BannerManager = () => {
               </label>
               {current.image && (
                 <div className="mt-4 aspect-[16/7] rounded-2xl overflow-hidden border border-white/10">
-                  <img src={`${API}${current.image}`} className="w-full h-full object-cover" />
+                  <img src={current.image} className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
 
-            <button onClick={handleSave} disabled={saving}
-              className="w-full bg-[#00ff88] text-black py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving} className="w-full bg-[#00ff88] text-black py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50">
               {saving ? 'Salvando...' : 'Salvar Banner'}
             </button>
           </div>

@@ -24,20 +24,36 @@ const LookbookManager = () => {
   }, [ctxProducts]);
 
   const handleSave = async (look) => {
-    const saveObj = {
-      image: look.image,
-      influencerName: look.influencerName,
-      productId: look.productId,
-      ord: Number(look.ord) || 0
-    };
+    try {
+      const saveObj = {
+        image: look.image,
+        influencername: look.influencerName || '',
+        productid: look.productId || null,
+        ord: Number(look.ord) || 0
+      };
 
-    if (look.id) saveObj.id = look.id;
-    else saveObj.id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      if (look.id) {
+        saveObj.id = look.id;
+      } else {
+        // Gera um ID numérico aleatório para novos registros caso a tabela não seja auto-incremento
+        saveObj.id = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+      }
 
-    await supabase.from('lookbook').upsert([saveObj]);
-    reloadLookbook();
-    setEditingLook(null);
-    setIsCreating(false);
+      console.log('DEBUG: Tentando salvar no Supabase:', saveObj);
+      const { error } = await supabase.from('lookbook').upsert([saveObj]);
+      
+      if (error) {
+        console.error('Erro detalhado do Supabase:', error);
+        throw error;
+      }
+
+      reloadLookbook();
+      setEditingLook(null);
+      setIsCreating(false);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar modelagem: ' + err.message);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -60,7 +76,11 @@ const LookbookManager = () => {
         .from('products')
         .upload(filePath, file);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro no upload:', error);
+        alert('Erro no upload da imagem: ' + (error.message || 'Erro desconhecido. Verifique as permissões do bucket "products" no Supabase.'));
+        throw error;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('products')

@@ -2,17 +2,14 @@ import React, { useState } from 'react';
 import { useConfig } from '../ConfigContext';
 import { useCart } from '../CartContext';
 import { 
-  ArrowLeft, ShoppingCart, MessageCircle, 
+  ArrowLeft, ShoppingCart, 
   ChevronLeft, ChevronRight, Shield, Truck, Scissors, 
   RotateCcw, Star, ZoomIn, X, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import MediaRenderer from './MediaRenderer';
 
-const API = '';
-
-const ProductPage = ({ product, onBack }) => {
+const ProductPage = ({ product, onBack, onNext, onPrev }) => {
   const { config } = useConfig();
   const { add } = useCart();
   const [selectedSize, setSelectedSize] = useState(null);
@@ -45,7 +42,6 @@ const ProductPage = ({ product, onBack }) => {
       return;
     }
     setCalculating(true);
-    // Simular delay de API
     setTimeout(() => {
       setShippingResult([
         { type: 'PAC', price: '19,90', time: '8-12 dias úteis' },
@@ -57,23 +53,41 @@ const ProductPage = ({ product, onBack }) => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      {/* Topbar */}
-      <div className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-10 py-4 flex items-center gap-4">
-        <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest">
-          <ArrowLeft size={18} /> Voltar
-        </button>
-        <span className="text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
-        <span className="text-white/40 text-xs uppercase tracking-widest font-bold truncate">{product.category}</span>
-        <span className="text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
-        <span className="text-white text-xs uppercase tracking-widest font-bold truncate">{product.name}</span>
+      {/* Topbar com Navegação Lateral */}
+      <div className="sticky top-0 z-40 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 md:px-10 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest">
+            <ArrowLeft size={18} /> Voltar
+          </button>
+          <span className="hidden md:block text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
+          <span className="hidden md:block text-white/40 text-xs uppercase tracking-widest font-bold truncate">{product.category}</span>
+          <span className="hidden md:block text-white/20 text-xs uppercase tracking-widest font-bold">/</span>
+          <span className="hidden md:block text-white text-xs uppercase tracking-widest font-bold truncate">{product.name}</span>
+        </div>
+
+        {/* Setas de Próximo/Anterior no Topo */}
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onPrev}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-primary/50 transition-all group"
+            title="Produto Anterior"
+          >
+            <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <button 
+            onClick={onNext}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-primary/50 transition-all group"
+            title="Próximo Produto"
+          >
+            <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-10 py-8 md:py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20">
 
-          {/* ── COLUNA ESQUERDA: Galeria ── */}
           <div className="space-y-4">
-            {/* Imagem principal — Proporção 1122x1402 */}
             <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-[#0c0c0c] border border-white/5 group" style={{ aspectRatio: '1122 / 1402' }}>
               {hasImages ? (
                 <>
@@ -94,11 +108,9 @@ const ProductPage = ({ product, onBack }) => {
                       />
                     </motion.div>
                   </AnimatePresence>
-                  {/* Zoom icon */}
                   <button onClick={() => setLightbox(true)} className="absolute top-4 right-4 p-2 bg-black/50 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     <ZoomIn size={18} />
                   </button>
-                  {/* Setas */}
                   {images.length > 1 && (
                     <>
                       <button onClick={prevImg} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80">
@@ -109,7 +121,6 @@ const ProductPage = ({ product, onBack }) => {
                       </button>
                     </>
                   )}
-                  {/* Contador */}
                   {images.length > 1 && (
                     <div className="absolute bottom-4 right-4 bg-black/60 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
                       {currentImg + 1} / {images.length}
@@ -121,7 +132,6 @@ const ProductPage = ({ product, onBack }) => {
               )}
             </div>
 
-            {/* Thumbnails */}
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
                 {images.map((img, i) => (
@@ -135,13 +145,10 @@ const ProductPage = ({ product, onBack }) => {
             )}
           </div>
 
-          {/* ── COLUNA DIREITA: Informações ── */}
           <div className="flex flex-col space-y-6">
-            {/* Categoria + nome */}
             <div>
               <p className="text-[10px] font-bold text-[#00ff88] uppercase tracking-[0.3em] mb-2">{product.category}</p>
               <h1 className="text-4xl md:text-6xl font-display font-extrabold uppercase tracking-tighter text-white leading-[0.9] mb-4">{product.name}</h1>
-              {/* Estrelas decorativas */}
               <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={14} className="text-[#00ff88] fill-[#00ff88]" />
@@ -150,7 +157,6 @@ const ProductPage = ({ product, onBack }) => {
               </div>
             </div>
 
-            {/* Preço — Estilo Minimalista e Definido */}
             <div className="py-8 border-y border-white/5 space-y-1">
               <div className="flex items-center gap-3">
                 <span className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
@@ -165,15 +171,9 @@ const ProductPage = ({ product, onBack }) => {
               </p>
             </div>
 
-            {/* Seletor de Tamanho — sempre visível */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">Escolha o Tamanho</p>
-                {selectedSize && (
-                  <span className="text-[10px] font-black text-[#00ff88] uppercase tracking-widest">
-                    ✓ Selecionado: {selectedSize}
-                  </span>
-                )}
               </div>
 
               {product.sizes && product.sizes.length > 0 ? (
@@ -185,7 +185,7 @@ const ProductPage = ({ product, onBack }) => {
                       whileTap={{ scale: 0.95 }}
                       className={`min-w-[56px] px-5 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all border-2 ${
                         selectedSize === size
-                          ? 'bg-[#00ff88] text-black border-[#00ff88] shadow-lg shadow-[#00ff88]/30 scale-105'
+                          ? 'bg-[#00ff88] text-black border-[#00ff88]'
                           : 'bg-transparent text-white border-white/15 hover:border-[#00ff88]/60 hover:bg-white/5'
                       }`}>
                       {size}
@@ -195,13 +195,12 @@ const ProductPage = ({ product, onBack }) => {
               ) : (
                 <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/5 rounded-xl">
                   <span className="text-white/30 text-xs font-bold uppercase tracking-widest">
-                    Tamanho único — sem necessidade de seleção
+                    Tamanho único
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Botão Carrinho / WhatsApp */}
             <div className="space-y-3 pt-2">
               <motion.button
                 onClick={handleAddToCart}
@@ -212,15 +211,13 @@ const ProductPage = ({ product, onBack }) => {
                     : 'bg-[#00ff88] text-black hover:opacity-90 shadow-xl shadow-[#00ff88]/20'
                 }`}>
                 {added ? (
-                  <><CheckCircle2 size={22} /> Redirecionando...</>
+                  <><CheckCircle2 size={22} /> Adicionado!</>
                 ) : (
                   <><ShoppingCart size={22} /> Adicionar ao Carrinho</>
                 )}
               </motion.button>
-
             </div>
 
-            {/* Badges de confiança */}
             <div className="grid grid-cols-3 gap-3 pt-2">
               {[
                 { icon: Shield, label: 'Qualidade Garantida' },
@@ -234,7 +231,6 @@ const ProductPage = ({ product, onBack }) => {
               ))}
             </div>
 
-            {/* Descrição */}
             {product.description && (
               <div className="pt-4 border-t border-white/5">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-3">Sobre o Produto</p>
@@ -242,7 +238,6 @@ const ProductPage = ({ product, onBack }) => {
               </div>
             )}
 
-            {/* Cálculo de Frete */}
             <div className="pt-6 border-t border-white/5">
               <div className="flex items-center gap-2 mb-3">
                 <Truck size={16} className="text-[#00ff88]" />
@@ -264,37 +259,24 @@ const ProductPage = ({ product, onBack }) => {
                   {calculating ? 'Calculando...' : 'Calcular'}
                 </button>
               </div>
-
-              {/* Resultados do Frete */}
-              <AnimatePresence>
-                {shippingResult && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }} 
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 space-y-2"
-                  >
-                    {shippingResult.map((res, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-[#00ff88] uppercase tracking-widest">{res.type}</span>
-                          <span className="text-[9px] text-white/40 font-bold uppercase">{res.time}</span>
-                        </div>
-                        <span className="text-sm font-black text-white">R$ {res.price}</span>
+              {shippingResult && (
+                <div className="mt-4 space-y-2">
+                  {shippingResult.map((res, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#00ff88] uppercase tracking-widest">{res.type}</span>
+                        <span className="text-[9px] text-white/40 font-bold uppercase">{res.time}</span>
                       </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <p className="mt-4 text-[9px] text-white/20 font-bold uppercase tracking-widest">
-                Entrega para todo o Brasil via Correios ou Transportadora
-              </p>
+                      <span className="text-sm font-black text-white">R$ {res.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lightbox */}
       <AnimatePresence>
         {lightbox && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -315,14 +297,6 @@ const ProductPage = ({ product, onBack }) => {
                 controls
               />
             </motion.div>
-            {images.length > 1 && (
-              <>
-                <button onClick={e => { e.stopPropagation(); prevImg(); }}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white"><ChevronLeft size={24} /></button>
-                <button onClick={e => { e.stopPropagation(); nextImg(); }}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white"><ChevronRight size={24} /></button>
-              </>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
