@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useConfig } from '../ConfigContext';
 import { useCart } from '../CartContext';
-import { Menu, X, MessageCircle, User, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Menu, X, MessageCircle, User, ShoppingBag, ChevronRight, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import MediaRenderer from './MediaRenderer';
 
-const Header = ({ setView, onAdmin }) => {
+const Header = ({ setView, onAdmin, search, setSearch }) => {
   const { config, categories, products } = useConfig();
   const { count, setOpen: openCart } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Categorias organizadas por Hierarquia
   const parentCategories = categories.filter(c => !c.parent_id);
@@ -166,6 +167,43 @@ const Header = ({ setView, onAdmin }) => {
         <div className="flex items-center justify-end gap-3 flex-1">
           <button onClick={onAdmin} className="hidden md:flex text-white/40 hover:text-white transition-colors p-2"><User size={20} /></button>
           
+          {/* Lupa de Pesquisa Interativa e Elegante */}
+          <div className="relative flex items-center">
+            <AnimatePresence>
+              {searchOpen && (
+                <motion.input
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 150, opacity: 1, marginRight: 4 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  type="text"
+                  placeholder="Buscar no catálogo..."
+                  value={search || ''}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="bg-black/60 border border-white/10 rounded-full py-1.5 px-4 text-[11px] text-white outline-none focus:border-[#00ff88]/40 placeholder:text-white/30 backdrop-blur-md"
+                  autoFocus
+                />
+              )}
+            </AnimatePresence>
+            
+            <button 
+              onClick={() => {
+                if (searchOpen && search) {
+                  setSearch('');
+                } else {
+                  setSearchOpen(!searchOpen);
+                }
+              }} 
+              className={`p-2 transition-colors ${searchOpen || search ? 'text-[#00ff88]' : 'text-white/70 hover:text-white'}`}
+              title="Buscar no catálogo"
+            >
+              {searchOpen && search ? (
+                <X size={20} />
+              ) : (
+                <Search size={20} />
+              )}
+            </button>
+          </div>
+
           {/* Ícone do Carrinho */}
           <button onClick={() => openCart(true)} className="relative p-2 text-white/70 hover:text-white transition-colors">
             <ShoppingBag size={22} />

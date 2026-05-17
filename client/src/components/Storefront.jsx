@@ -19,8 +19,24 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openProduct, setOpenProduct] = useState(null);
   const [activeView, setActiveView] = useState(initialView);
+  const [search, setSearch] = useState('');
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    if (val) {
+      if (activeView !== 'home') {
+        setActiveView('home');
+      }
+      setSelectedCategory(null); // Limpa o filtro de categoria ao pesquisar
+      setTimeout(() => {
+        const el = document.getElementById('catalog');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
 
   const handleSetView = (v) => {
+    setSearch(''); // Limpa a busca ao navegar por categorias
     if (v === 'home') {
       setActiveView('home');
       setSelectedCategory(null);
@@ -71,7 +87,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
   if (activeView === 'help') {
     return (
       <div className="bg-background min-h-screen">
-        <Header onAdmin={onAdmin} setView={handleSetView} />
+        <Header onAdmin={onAdmin} setView={handleSetView} search={search} setSearch={handleSearchChange} />
         <div className="pt-10">
           <HowToBuy />
         </div>
@@ -86,7 +102,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
   if (activeView === 'lookbook') {
     return (
       <div className="bg-background min-h-screen">
-        <Header onAdmin={onAdmin} setView={handleSetView} />
+        <Header onAdmin={onAdmin} setView={handleSetView} search={search} setSearch={handleSearchChange} />
         <LookbookView setOpenProduct={setOpenProduct} />
         <Footer />
         <CartDrawer />
@@ -98,7 +114,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
 
   return (
     <div className="bg-[#050505] min-h-screen">
-      <Header onAdmin={onAdmin} setView={handleSetView} />
+      <Header onAdmin={onAdmin} setView={handleSetView} search={search} setSearch={handleSearchChange} />
       <main className="pt-24 pb-20">
         <Banner />
         <CategorySection onSelect={setSelectedCategory} active={selectedCategory} />
@@ -106,6 +122,8 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
           activeCategory={selectedCategory}
           onClearCategory={() => setSelectedCategory(null)}
           onOpenProduct={setOpenProduct}
+          search={search}
+          setSearch={handleSearchChange}
         />
         <InfoSections />
       </main>

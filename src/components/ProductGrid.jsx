@@ -115,9 +115,8 @@ const HorizontalCarousel = ({ title, products, onOpenProduct, icon: Icon, iconCo
   );
 };
 
-const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
+const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct, search, setSearch }) => {
   const { categories, products } = useConfig();
-  const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(0);
 
   // Reset para primeira página quando filtro muda

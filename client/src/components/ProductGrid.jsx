@@ -108,9 +108,8 @@ const HorizontalCarousel = ({ title, items, onSelect, icon: Icon, extra }) => {
   );
 };
 
-const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct }) => {
+const ProductGrid = ({ activeCategory, onClearCategory, onOpenProduct, search, setSearch }) => {
   const { products, categories } = useConfig();
-  const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(0);
 
   useEffect(() => { setPage(0); }, [activeCategory, search]);
