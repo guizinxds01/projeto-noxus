@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useConfig } from '../ConfigContext';
 import { useCart } from '../CartContext';
-import { Menu, X, MessageCircle, User, ShoppingBag, ChevronRight, Search } from 'lucide-react';
+import { Menu, X, MessageCircle, ShoppingBag, ChevronRight, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import MediaRenderer from './MediaRenderer';
@@ -166,7 +166,6 @@ const Header = ({ setView, onAdmin, search, setSearch }) => {
 
         {/* Right: Actions */}
         <div className="flex items-center justify-end gap-3 flex-1">
-          <button onClick={onAdmin} className="hidden md:flex text-white/40 hover:text-white transition-colors p-2"><User size={20} /></button>
           
           {/* Lupa de Pesquisa Interativa e Elegante */}
           <div className="relative flex items-center">
@@ -278,9 +277,6 @@ const Header = ({ setView, onAdmin, search, setSearch }) => {
                 <a href="/modelagem" onClick={(e) => { e.preventDefault(); setView('lookbook'); setMenuOpen(false); }} className="text-2xl font-black uppercase italic text-[#00ff88]">Modelagem</a>
                 <a href="/como-comprar" onClick={(e) => { e.preventDefault(); setView('help'); setMenuOpen(false); }} className="text-2xl font-black uppercase italic text-white">Como Comprar</a>
               </nav>
-              <button onClick={() => { onAdmin(); setMenuOpen(false); }} className="mt-auto text-xs text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
-                <User size={14} /> Admin
-              </button>
             </motion.div>
           </>
         )}
