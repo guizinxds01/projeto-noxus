@@ -63,7 +63,12 @@ const BannerManager = () => {
         ord: Number(current.order) || 0
       };
 
-      if (current._id) saveObj.id = current._id;
+      if (current._id) {
+        saveObj.id = current._id;
+      } else {
+        // Gera um ID único aleatório para novos banners já que a tabela no Supabase não é autoincremento
+        saveObj.id = 'banner-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      }
 
       const { error } = await supabase.from('banners').upsert([saveObj]);
       if (error) throw error;

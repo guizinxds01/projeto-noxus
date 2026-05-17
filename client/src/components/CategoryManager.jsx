@@ -45,7 +45,12 @@ const CategoryManager = () => {
         image: current.image,
         parent_id: current.parent_id || null
       };
-      if (current._id) saveObj.id = current._id;
+      if (current._id) {
+        saveObj.id = current._id;
+      } else {
+        // Gera um ID único aleatório para novas categorias já que a tabela no Supabase não é autoincremento
+        saveObj.id = 'cat-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      }
       const { error } = await supabase.from('categories').upsert([saveObj]);
       if (error) throw error;
       await load();
