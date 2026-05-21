@@ -12,12 +12,36 @@ import HowToBuy from './HowToBuy';
 import FloatingWhatsApp from './FloatingWhatsApp';
 import ExitIntentPopup from './ExitIntentPopup';
 import { ArrowLeft } from 'lucide-react';
+import { useConfig } from '../ConfigContext';
 
 const Storefront = ({ onAdmin, initialView = 'home' }) => {
+  const { products, loading } = useConfig();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openProduct, setOpenProduct] = useState(null);
   const [activeView, setActiveView] = useState(initialView);
   const [search, setSearch] = useState('');
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-center gap-4">
+        {/* Spinner Giratório Premium */}
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-2 border-white/5"></div>
+          <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-primary/50 animate-spin"></div>
+        </div>
+        
+        {/* Texto da Marca com Efeito Glow */}
+        <div className="text-center mt-2 animate-pulse">
+          <h2 className="text-xl font-black uppercase italic tracking-[0.25em] text-white">
+            NOXUS
+          </h2>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-primary mt-1 block">
+            Carregando Coleções...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const handleSearchChange = (val) => {
     setSearch(val);

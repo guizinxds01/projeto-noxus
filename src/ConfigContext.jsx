@@ -42,6 +42,39 @@ export const ConfigProvider = ({ children }) => {
   const [lookbook, setLookbook] = useState([]);
   const [products, setProducts] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+
+  const initApp = async () => {
+    setLoading(true);
+    try {
+      const [productsRes, categoriesRes, lookbookRes, configRes] = await Promise.all([
+        supabase.from('products').select('*').order('id', { ascending: false }),
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('lookbook').select('*').order('ord'),
+        supabase.from('config').select('*')
+      ]);
+
+      if (productsRes.data) {
+        setProducts(productsRes.data.map(parseProduct));
+      }
+      if (categoriesRes.data) {
+        setCategories(categoriesRes.data.map(c => ({ _id: c.id, name: c.name, image: c.image, parent_id: c.parent_id })));
+      }
+      if (lookbookRes.data) {
+        setLookbook(lookbookRes.data.map(parseLook));
+      }
+      if (configRes.data) {
+        const cfg = {};
+        configRes.data.forEach(r => { cfg[r.key] = r.value; });
+        if (Object.keys(cfg).length > 0) setConfig(p => ({ ...p, ...cfg }));
+      }
+    } catch (e) {
+      console.error("Erro ao inicializar app:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const reloadProducts = async () => {
     const { data } = await supabase.from('products').select('*').order('id', { ascending: false });
     setProducts((data || []).map(parseProduct));
@@ -65,10 +98,7 @@ export const ConfigProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    reloadConfig();
-    reloadCategories();
-    reloadLookbook();
-    reloadProducts();
+    initApp();
   }, []);
 
   useEffect(() => {
@@ -117,7 +147,7 @@ export const ConfigProvider = ({ children }) => {
   };
 
   return (
-    <Ctx.Provider value={{ config, categories, lookbook, products, updateConfig, reloadCategories, reloadLookbook, reloadProducts }}>
+    <Ctx.Provider value={{ config, categories, lookbook, products, loading, updateConfig, reloadCategories, reloadLookbook, reloadProducts }}>
       {children}
     </Ctx.Provider>
   );

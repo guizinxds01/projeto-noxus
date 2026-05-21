@@ -16,9 +16,6 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
   const [currentImg, setCurrentImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [added, setAdded] = useState(false);
-  const [cep, setCep] = useState('');
-  const [shippingResult, setShippingResult] = useState(null);
-  const [calculating, setCalculating] = useState(false);
 
   const images = product.images || [];
   const hasImages = images.length > 0;
@@ -36,20 +33,7 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const calculateShipping = () => {
-    if (cep.length < 8) {
-      alert('Por favor, digite um CEP válido.');
-      return;
-    }
-    setCalculating(true);
-    setTimeout(() => {
-      setShippingResult([
-        { type: 'PAC', price: '19,90', time: '8-12 dias úteis' },
-        { type: 'SEDEX', price: '34,90', time: '2-4 dias úteis' }
-      ]);
-      setCalculating(false);
-    }, 800);
-  };
+
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -218,6 +202,7 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
               </motion.button>
             </div>
 
+
             <div className="grid grid-cols-3 gap-3 pt-2">
               {[
                 { icon: Shield, label: 'Qualidade Garantida' },
@@ -237,42 +222,6 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
                 <p className="text-white/60 leading-relaxed text-sm">{product.description}</p>
               </div>
             )}
-
-            <div className="pt-6 border-t border-white/5">
-              <div className="flex items-center gap-2 mb-3">
-                <Truck size={16} className="text-[#00ff88]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Calcular Frete</p>
-              </div>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Seu CEP (00000-000)"
-                  value={cep}
-                  onChange={e => setCep(e.target.value.replace(/\D/g, '').substring(0, 8))}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-[#00ff88]/50 outline-none font-bold"
-                />
-                <button 
-                  onClick={calculateShipping}
-                  disabled={calculating}
-                  className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
-                >
-                  {calculating ? 'Calculando...' : 'Calcular'}
-                </button>
-              </div>
-              {shippingResult && (
-                <div className="mt-4 space-y-2">
-                  {shippingResult.map((res, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-[#00ff88] uppercase tracking-widest">{res.type}</span>
-                        <span className="text-[9px] text-white/40 font-bold uppercase">{res.time}</span>
-                      </div>
-                      <span className="text-sm font-black text-white">R$ {res.price}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

@@ -42,6 +42,39 @@ const parseProduct = (p) => {
     };
   };
 
+  const [loading, setLoading] = useState(true);
+
+  const initApp = async () => {
+    setLoading(true);
+    try {
+      const [productsRes, categoriesRes, lookbookRes, configRes] = await Promise.all([
+        supabase.from('products').select('*').order('id', { ascending: false }),
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('lookbook').select('*').order('ord'),
+        supabase.from('config').select('*')
+      ]);
+
+      if (productsRes.data) {
+        setProducts(productsRes.data.map(parseProduct));
+      }
+      if (categoriesRes.data) {
+        setCategories(categoriesRes.data.map(c => ({ _id: c.id, ...c })));
+      }
+      if (lookbookRes.data) {
+        setLookbook(lookbookRes.data.map(parseLook));
+      }
+      if (configRes.data) {
+        const cfg = {};
+        configRes.data.forEach(r => { cfg[r.key] = r.value; });
+        if (Object.keys(cfg).length > 0) setConfig(p => ({ ...p, ...cfg }));
+      }
+    } catch (e) {
+      console.error("Erro ao inicializar app:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const reloadProducts = async () => {
     const { data } = await supabase.from('products').select('*').order('id', { ascending: false });
     setProducts((data || []).map(parseProduct));
@@ -58,15 +91,14 @@ const parseProduct = (p) => {
   };
 
   const loadConfig = async () => {
-    const { data } = await supabase.from('config').select('*').single();
-    if (data) setConfig(data);
+    const { data } = await supabase.from('config').select('*');
+    const cfg = {};
+    data?.forEach(r => { cfg[r.key] = r.value; });
+    if (Object.keys(cfg).length > 0) setConfig(p => ({ ...p, ...cfg }));
   };
 
   useEffect(() => {
-    loadConfig();
-    reloadCategories();
-    reloadLookbook();
-    reloadProducts();
+    initApp();
   }, []);
 
   useEffect(() => {
@@ -106,12 +138,13 @@ const parseProduct = (p) => {
   }, [config.name, config.logo, config.theme, config.primaryColor]);
 
   const updateConfig = async (data) => {
-    const { error } = await supabase.from('config').upsert([data]);
-    if (!error) setConfig(data);
+    const entries = Object.entries(data).map(([key, value]) => ({ key, value: String(value) }));
+    await supabase.from('config').upsert(entries);
+    loadConfig();
   };
 
   return (
-    <Ctx.Provider value={{ config, categories, lookbook, products, updateConfig, reloadCategories, reloadLookbook, reloadProducts }}>
+    <Ctx.Provider value={{ config, categories, lookbook, products, loading, updateConfig, reloadCategories, reloadLookbook, reloadProducts }}>
       {children}
     </Ctx.Provider>
   );

@@ -16,6 +16,7 @@ const MediaRenderer = ({ url, className, ...props }) => {
         muted
         loop
         playsInline
+        preload="metadata"
         style={{ imageRendering: '-webkit-optimize-contrast' }}
         {...props}
       />
@@ -27,6 +28,7 @@ const MediaRenderer = ({ url, className, ...props }) => {
       src={fullUrl}
       className={`${className} object-cover`}
       loading="lazy"
+      decoding="async"
       style={{ imageRendering: '-webkit-optimize-contrast' }}
       {...props}
     />
