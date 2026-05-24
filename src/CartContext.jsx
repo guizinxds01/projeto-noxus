@@ -6,6 +6,7 @@ export const useCart = () => useContext(CartCtx);
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState([]);   // { id, product, size, qty }
   const [open, setOpen] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState('');
 
   const add = useCallback((product, size) => {
     const key = `${product._id}_${size || ''}`;
@@ -34,7 +35,7 @@ export const CartProvider = ({ children }) => {
   const count = items.reduce((acc, i) => acc + i.qty, 0);
 
   return (
-    <CartCtx.Provider value={{ items, add, remove, updateQty, clear, total, count, open, setOpen }}>
+    <CartCtx.Provider value={{ items, add, remove, updateQty, clear, total, count, open, setOpen, appliedCoupon, setAppliedCoupon }}>
       {children}
     </CartCtx.Provider>
   );

@@ -6,12 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 const CartDrawer = () => {
-  const { items, remove, updateQty, clear, total, count, open, setOpen } = useCart();
+  const { items, remove, updateQty, clear, total, count, open, setOpen, appliedCoupon, setAppliedCoupon } = useCart();
   const { config } = useConfig();
 
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState('');
 
   const [deliveryMethod, setDeliveryMethod] = useState('motoboy_zl'); // 'motoboy_zl' | 'outros' | 'retirada'
   const [shippingAddress, setShippingAddress] = useState('');

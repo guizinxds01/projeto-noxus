@@ -8,6 +8,7 @@ import WhatsAppConfig from './WhatsAppConfig';
 import CategoryManager from './CategoryManager';
 import OrdersList from './OrdersList';
 import LookbookManager from './LookbookManager';
+import CouponManager from './CouponManager';
 import { 
   LayoutDashboard, 
   Package, 
@@ -19,7 +20,8 @@ import {
   MessageSquare, 
   ShoppingBag,
   ExternalLink,
-  LogOut
+  LogOut,
+  Ticket
 } from 'lucide-react';
 
 const menuItems = [
@@ -29,6 +31,7 @@ const menuItems = [
   { id: 'banners',     label: 'Banners',         icon: ImageIcon },
   { id: 'lookbook',    label: 'Modelagem',       icon: Camera },
   { id: 'orders',      label: 'Pedidos',         icon: ShoppingBag },
+  { id: 'coupons',     label: 'Cupons',          icon: Ticket },
   { id: 'appearance',  label: 'Personalização',  icon: Palette },
   { id: 'whatsapp',    label: 'WhatsApp',        icon: MessageSquare },
   { id: 'settings',    label: 'Configurações',   icon: SettingsIcon },
@@ -89,6 +92,7 @@ const AdminPanel = ({ onExit, onLogout }) => {
           <div style={{ display: activeTab === 'banners'    ? 'block' : 'none' }}><BannerManager /></div>
           <div style={{ display: activeTab === 'lookbook'   ? 'block' : 'none' }}><LookbookManager /></div>
           <div style={{ display: activeTab === 'orders'     ? 'block' : 'none' }}><OrdersList /></div>
+          <div style={{ display: activeTab === 'coupons'    ? 'block' : 'none' }}><CouponManager /></div>
           <div style={{ display: activeTab === 'appearance' ? 'block' : 'none' }}><AppearanceEditor /></div>
           <div style={{ display: activeTab === 'whatsapp'   ? 'block' : 'none' }}><WhatsAppConfig /></div>
           <div style={{ display: activeTab === 'settings'   ? 'block' : 'none' }}><Settings /></div>

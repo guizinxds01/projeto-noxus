@@ -4,7 +4,7 @@ import { useCart } from '../CartContext';
 import { 
   ArrowLeft, ShoppingCart, MessageCircle, 
   ChevronLeft, ChevronRight, Shield, Truck, Scissors, 
-  RotateCcw, Star, ZoomIn, X, CheckCircle2
+  RotateCcw, Star, ZoomIn, X, CheckCircle2, Ticket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,11 +13,34 @@ import MediaRenderer from './MediaRenderer';
 
 const ProductPage = ({ product, onBack, onNext, onPrev }) => {
   const { config } = useConfig();
-  const { add } = useCart();
+  const { add, appliedCoupon, setAppliedCoupon } = useCart();
   const [selectedSize, setSelectedSize] = useState(null);
   const [currentImg, setCurrentImg] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [added, setAdded] = useState(false);
+
+  const [couponInput, setCouponInput] = useState(appliedCoupon || '');
+  const [couponError, setCouponError] = useState('');
+
+  const isCouponValid = appliedCoupon && config.couponCode && appliedCoupon === config.couponCode.trim().toUpperCase();
+  const couponDiscountPercent = isCouponValid ? (parseFloat(config.couponDiscount) || 0) : 0;
+
+  const handleApplyCoupon = () => {
+    setCouponError('');
+    const cleanInput = couponInput.trim().toUpperCase();
+    if (!cleanInput) return;
+
+    if (config.couponCode && cleanInput === config.couponCode.trim().toUpperCase()) {
+      setAppliedCoupon(cleanInput);
+    } else {
+      setCouponError('Cupom inválido ou expirado');
+      setAppliedCoupon('');
+    }
+  };
+
+  React.useEffect(() => {
+    setCouponInput(appliedCoupon || '');
+  }, [appliedCoupon]);
 
   const images = product.images || [];
   const hasImages = images.length > 0;
@@ -218,6 +241,57 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
                   <><ShoppingCart size={22} /> Adicionar ao Carrinho</>
                 )}
               </motion.button>
+            </div>
+
+            {/* Seção de Cupom de Desconto */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-wider text-white/40 flex items-center gap-2">
+                <Ticket size={14} className="text-[#00ff88]" />
+                Cupom de Desconto
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="INSIRA SEU CUPOM"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase());
+                    setCouponError('');
+                  }}
+                  disabled={!!appliedCoupon}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-black tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-[#00ff88] disabled:opacity-50 uppercase"
+                />
+                {appliedCoupon ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedCoupon('');
+                      setCouponInput('');
+                    }}
+                    className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-black tracking-widest uppercase transition-colors"
+                  >
+                    Remover
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    className="px-5 py-3 bg-white text-black hover:bg-[#00ff88] rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-300 hover:shadow-lg hover:shadow-[#00ff88]/10"
+                  >
+                    Aplicar
+                  </button>
+                )}
+              </div>
+              
+              {couponError && (
+                <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{couponError}</p>
+              )}
+              
+              {isCouponValid && (
+                <p className="text-[#00ff88] text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 animate-pulse">
+                  ✓ Cupom "{appliedCoupon}" de {couponDiscountPercent}% aplicado com sucesso!
+                </p>
+              )}
             </div>
 
 
