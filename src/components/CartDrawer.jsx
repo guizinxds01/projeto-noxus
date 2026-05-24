@@ -13,11 +13,16 @@ const CartDrawer = () => {
   const [couponError, setCouponError] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
 
+  const [deliveryMethod, setDeliveryMethod] = useState('motoboy_zl'); // 'motoboy_zl' | 'outros' | 'retirada'
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [addressError, setAddressError] = useState('');
+
   // Lógica de cálculo de desconto reativo
   const isCouponValid = appliedCoupon && config.couponCode && appliedCoupon === config.couponCode.trim().toUpperCase();
   const couponDiscountPercent = isCouponValid ? (parseFloat(config.couponDiscount) || 0) : 0;
   const discountAmount = (total * couponDiscountPercent) / 100;
-  const finalTotal = Math.max(0, total - discountAmount);
+  const shippingFee = deliveryMethod === 'motoboy_zl' ? 25.00 : 0.00;
+  const finalTotal = Math.max(0, total - discountAmount + shippingFee);
 
   const handleApplyCoupon = () => {
     setCouponError('');
@@ -34,6 +39,12 @@ const CartDrawer = () => {
 
   const handleFinalize = () => {
     if (items.length === 0) return;
+
+    // Se for entrega, validar o endereço
+    if (deliveryMethod !== 'retirada' && !shippingAddress.trim()) {
+      setAddressError('Por favor, informe seu endereço de entrega');
+      return;
+    }
 
     const lines = items.map(i =>
       `• *${i.product.name}*${i.size ? ` (Tam: ${i.size})` : ''} x${i.qty} — R$ ${(parseFloat(i.product.price) * i.qty).toFixed(2)}`
@@ -52,7 +63,22 @@ const CartDrawer = () => {
       msgParts.push(`Desconto: -R$ ${discountAmount.toFixed(2)}`);
     }
 
+    if (deliveryMethod === 'motoboy_zl') {
+      msgParts.push(`🛵 Envio: Motoboy - Zona Leste (R$ 25,00)`);
+    } else if (deliveryMethod === 'outros') {
+      msgParts.push(`📦 Envio: Outras Regiões (A combinar via WhatsApp)`);
+    } else {
+      msgParts.push(`📍 Retirada: Retirada Física (Grátis)`);
+    }
+
     msgParts.push(`*Total: R$ ${finalTotal.toFixed(2)}*`);
+
+    if (deliveryMethod !== 'retirada') {
+      msgParts.push('');
+      msgParts.push(`📍 *Endereço de Entrega:*`);
+      msgParts.push(shippingAddress.trim());
+    }
+
     msgParts.push('');
     msgParts.push('Quero finalizar meu pedido!');
 
@@ -62,6 +88,7 @@ const CartDrawer = () => {
     clear();
     setAppliedCoupon('');
     setCouponInput('');
+    setShippingAddress('');
     setOpen(false);
   };
 
@@ -220,6 +247,62 @@ const CartDrawer = () => {
                   )}
                 </div>
 
+                {/* Opções de Envio */}
+                <div className="border-b border-white/5 pb-4 space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-white/30 flex items-center gap-1.5">
+                    🛵 Método de Envio
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'motoboy_zl', label: 'Leste', sub: 'Motoboy', fee: 'R$ 25' },
+                      { id: 'outros', label: 'Outros', sub: 'A combinar', fee: 'Frete' },
+                      { id: 'retirada', label: 'Retirar', sub: 'Loja Física', fee: 'Grátis' }
+                    ].map((method) => (
+                      <button
+                        type="button"
+                        key={method.id}
+                        onClick={() => {
+                          setDeliveryMethod(method.id);
+                          setAddressError('');
+                        }}
+                        className={`flex flex-col items-center justify-between p-3 rounded-xl border transition-all duration-300 text-center cursor-pointer ${
+                          deliveryMethod === method.id
+                            ? 'border-[#00ff88] bg-[#00ff88]/5 text-white'
+                            : 'border-white/5 bg-white/[0.02] text-white/50 hover:border-white/10 hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-wider">{method.label}</span>
+                        <span className="text-[8px] font-bold text-white/30 uppercase mt-0.5 leading-none">{method.sub}</span>
+                        <span className={`text-[10px] font-black mt-1.5 ${deliveryMethod === method.id ? 'text-[#00ff88]' : 'text-white/60'}`}>
+                          {method.fee}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Campo de Endereço se não for retirada */}
+                  {deliveryMethod !== 'retirada' && (
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                        Endereço Completo de Entrega
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Rua, número, complemento, bairro e CEP"
+                        value={shippingAddress}
+                        onChange={(e) => {
+                          setShippingAddress(e.target.value);
+                          if (e.target.value.trim()) setAddressError('');
+                        }}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-medium tracking-wide text-white placeholder-white/20 focus:outline-none focus:border-[#00ff88] resize-none"
+                      />
+                      {addressError && (
+                        <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{addressError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Resumo */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -228,10 +311,23 @@ const CartDrawer = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-black text-white/60">R$ {total.toFixed(2)}</span>
-                    <button onClick={() => { clear(); setAppliedCoupon(''); setCouponInput(''); }} className="text-[10px] font-bold text-red-500/50 hover:text-red-500 uppercase tracking-widest transition-colors">
+                    <button onClick={() => { clear(); setAppliedCoupon(''); setCouponInput(''); setShippingAddress(''); }} className="text-[10px] font-bold text-red-500/50 hover:text-red-500 uppercase tracking-widest transition-colors">
                       Limpar tudo
                     </button>
                   </div>
+
+                  {deliveryMethod === 'motoboy_zl' && (
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-white/60">
+                      <span>Frete (Motoboy)</span>
+                      <span>R$ 25.00</span>
+                    </div>
+                  )}
+                  {deliveryMethod === 'outros' && (
+                    <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-white/60">
+                      <span>Frete (Outras Regiões)</span>
+                      <span className="text-[#00ff88]">A Combinar</span>
+                    </div>
+                  )}
 
                   {isCouponValid && (
                     <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-[#00ff88] bg-[#00ff88]/5 border border-[#00ff88]/10 p-3 rounded-xl">
