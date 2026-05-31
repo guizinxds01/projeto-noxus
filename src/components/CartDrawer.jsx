@@ -63,7 +63,7 @@ const CartDrawer = () => {
     }
 
     if (deliveryMethod === 'motoboy_zl') {
-      msgParts.push(`🛵 Envio: Motoboy - Zona Leste (R$ 25,00)`);
+      msgParts.push(`🛵 Envio: Motoboy - Até 9km (R$ 25,00)`);
     } else if (deliveryMethod === 'outros') {
       msgParts.push(`📦 Envio: Outras Regiões (A combinar via WhatsApp)`);
     } else {
@@ -253,7 +253,7 @@ const CartDrawer = () => {
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: 'motoboy_zl', label: 'Leste', sub: 'Motoboy', fee: 'R$ 25' },
+                      { id: 'motoboy_zl', label: 'Até 9km', sub: 'Motoboy', fee: 'R$ 25' },
                       { id: 'outros', label: 'Outros', sub: 'A combinar', fee: 'Frete' },
                       { id: 'retirada', label: 'Retirar', sub: 'Loja Física', fee: 'Grátis' }
                     ].map((method) => (
