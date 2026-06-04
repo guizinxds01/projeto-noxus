@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import MediaRenderer from './MediaRenderer';
+import { slugify } from '../lib/utils';
 
 const ProductCard = ({ product, onSelect }) => {
   // Gerar visualizações (priorizando o valor manual do admin)
@@ -10,12 +11,18 @@ const ProductCard = ({ product, onSelect }) => {
     : (Math.abs(String(product._id || product.id).split('').reduce((a,b) => {a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)) % 35) + 12;
 
   return (
-    <motion.div
+    <motion.a
+      href={`/produto/${slugify(product.name)}`}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      onClick={() => onSelect && onSelect(product)}
-      className="group cursor-pointer flex flex-col bg-surface border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 h-full"
+      onClick={(e) => {
+        // Se clicar com teclas de modificação para abrir em nova aba/janela, deixa o navegador agir nativamente
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+        e.preventDefault();
+        onSelect && onSelect(product);
+      }}
+      className="group cursor-pointer flex flex-col bg-surface border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 h-full block"
     >
       <div className="relative overflow-hidden bg-background/50" style={{ aspectRatio: '1122 / 1402' }}>
         {product.images?.[0] ? (
@@ -80,7 +87,7 @@ const ProductCard = ({ product, onSelect }) => {
           )}
         </div>
       </div>
-    </motion.div>
+    </motion.a>
   );
 };
 

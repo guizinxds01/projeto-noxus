@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, ArrowRight } from 'lucide-react';
 import { useConfig } from '../ConfigContext';
+import { slugify } from '../lib/utils';
 
 import MediaRenderer from './MediaRenderer';
 
@@ -58,8 +59,13 @@ const LookbookView = ({ setOpenProduct }) => {
                   )}
 
                   {product && (
-                    <button
-                      onClick={() => setOpenProduct(product)}
+                    <a
+                      href={`/produto/${slugify(product.name)}`}
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+                        e.preventDefault();
+                        setOpenProduct(product);
+                      }}
                       className="flex items-center justify-between bg-white/10 hover:bg-[#00ff88] text-white hover:text-black backdrop-blur-md rounded-xl p-4 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 delay-75"
                     >
                       <div className="flex flex-col text-left">
@@ -67,7 +73,7 @@ const LookbookView = ({ setOpenProduct }) => {
                         <span className="font-bold text-sm truncate max-w-[180px]">{product.name}</span>
                       </div>
                       <ArrowRight size={20} />
-                    </button>
+                    </a>
                   )}
                 </div>
               </motion.div>

@@ -146,9 +146,6 @@ const ProductPage = ({ product, onBack, onNext, onPrev }) => {
                 <span className="text-4xl md:text-5xl font-bold text-white tracking-tighter">
                   R$ {product.price}
                 </span>
-                <span className="bg-[#00ff88]/10 text-[#00ff88] text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest border border-[#00ff88]/20">
-                  5% OFF no PIX
-                </span>
               </div>
               <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em]">
                 Ou em até 12x de R$ {(parseFloat(product.price)/12).toFixed(2).replace('.', ',')}

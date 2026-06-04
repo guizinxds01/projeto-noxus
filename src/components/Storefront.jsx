@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Banner from './Banner';
 import CategorySection from './CategorySection';
@@ -13,13 +13,48 @@ import FloatingWhatsApp from './FloatingWhatsApp';
 import ExitIntentPopup from './ExitIntentPopup';
 import { ArrowLeft } from 'lucide-react';
 import { useConfig } from '../ConfigContext';
+import { slugify } from '../lib/utils';
 
 const Storefront = ({ onAdmin, initialView = 'home' }) => {
-  const { products, loading } = useConfig();
+  const { config, products, loading } = useConfig();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openProduct, setOpenProduct] = useState(null);
   const [activeView, setActiveView] = useState(initialView);
   const [search, setSearch] = useState('');
+
+  // Sincronizar openProduct com a URL
+  useEffect(() => {
+    if (loading) return;
+
+    const handleRoute = () => {
+      const path = window.location.pathname;
+      if (path.startsWith('/produto/')) {
+        const slug = path.replace('/produto/', '');
+        const found = products.find(p => slugify(p.name) === slug);
+        if (found) {
+          setOpenProduct(found);
+        } else {
+          setOpenProduct(null);
+        }
+      } else {
+        setOpenProduct(null);
+      }
+    };
+
+    handleRoute();
+
+    window.addEventListener('popstate', handleRoute);
+    return () => window.removeEventListener('popstate', handleRoute);
+  }, [products, loading]);
+
+  // Atualizar o título da página baseado no produto aberto
+  useEffect(() => {
+    if (openProduct) {
+      document.title = `${openProduct.name} — ${config.name || 'NOXUS'}`;
+    } else if (config.name) {
+      document.title = `${config.name} — Loja Premium`;
+    }
+  }, [openProduct, config.name]);
 
   if (loading) {
     return (
@@ -93,25 +128,47 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
     </div>
   );
 
+  // Abrir ou fechar produto atualizando a URL
+  const handleOpenProduct = (product) => {
+    setOpenProduct(product);
+    if (product) {
+      window.history.pushState({}, '', `/produto/${slugify(product.name)}`);
+    } else {
+      let path = '/';
+      if (activeView === 'help') {
+        path = '/ajuda';
+      } else if (activeView === 'lookbook') {
+        path = '/modelagem';
+      }
+      window.history.pushState({}, '', path);
+    }
+  };
+
   // Navegação entre produtos
   const handleNextProduct = () => {
     if (!openProduct) return;
     const currentIndex = products.findIndex(p => p._id === openProduct._id);
+    let nextProd;
     if (currentIndex < products.length - 1) {
-      setOpenProduct(products[currentIndex + 1]);
+      nextProd = products[currentIndex + 1];
     } else {
-      setOpenProduct(products[0]); // Loop para o primeiro
+      nextProd = products[0]; // Loop para o primeiro
     }
+    setOpenProduct(nextProd);
+    window.history.pushState({}, '', `/produto/${slugify(nextProd.name)}`);
   };
 
   const handlePrevProduct = () => {
     if (!openProduct) return;
     const currentIndex = products.findIndex(p => p._id === openProduct._id);
+    let prevProd;
     if (currentIndex > 0) {
-      setOpenProduct(products[currentIndex - 1]);
+      prevProd = products[currentIndex - 1];
     } else {
-      setOpenProduct(products[products.length - 1]); // Loop para o último
+      prevProd = products[products.length - 1]; // Loop para o último
     }
+    setOpenProduct(prevProd);
+    window.history.pushState({}, '', `/produto/${slugify(prevProd.name)}`);
   };
 
   // Renderização Condicional de Vistas
@@ -120,7 +177,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
       <>
         <ProductPage 
           product={openProduct} 
-          onBack={() => setOpenProduct(null)} 
+          onBack={() => handleOpenProduct(null)} 
           onNext={handleNextProduct}
           onPrev={handlePrevProduct}
         />
@@ -150,7 +207,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
     return (
       <div className="bg-background min-h-screen">
         <Header onAdmin={onAdmin} setView={handleSetView} search={search} setSearch={handleSearchChange} />
-        <LookbookView setOpenProduct={setOpenProduct} />
+        <LookbookView setOpenProduct={handleOpenProduct} />
         <Footer />
         <CartDrawer />
         <FloatingWhatsApp />
@@ -168,7 +225,7 @@ const Storefront = ({ onAdmin, initialView = 'home' }) => {
         <ProductGrid
           activeCategory={selectedCategory}
           onClearCategory={() => setSelectedCategory(null)}
-          onOpenProduct={setOpenProduct}
+          onOpenProduct={handleOpenProduct}
           search={search}
           setSearch={handleSearchChange}
         />
