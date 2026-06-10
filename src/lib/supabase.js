@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+// Conexão segura com o novo banco de dados Supabase
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
